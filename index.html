@@ -1,0 +1,3541 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Red de Talleres · Mobius Group</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<style>
+:root{
+  --teal:#3DBFBF;--teal-d:#2a9090;--teal-l:#EAF7F7;
+  --dark:#2D3142;--dark2:#1A1A2E;
+  --gray-50:#F5F7FA;--gray-100:#ECEEF2;--gray-200:#D8DCE6;--gray-300:#BCC3D0;--gray-400:#9BA3B2;--gray-500:#7B8499;--gray-700:#4A5168;
+  --white:#FFFFFF;
+  --green:#1A7A4A;--green-bg:#D4F0E2;
+  --amber:#92400E;--amber-bg:#FEF3C7;
+  --blue:#1D4ED8;--blue-bg:#DBEAFE;
+  --pink:#9D174D;--pink-bg:#FCE7F3;
+  --red:#B91C1C;--red-bg:#FEE2E2;
+  --r:6px;--sh:0 1px 4px rgba(0,0,0,0.07);--sh-md:0 4px 16px rgba(0,0,0,0.10);--sh-lg:0 12px 40px rgba(0,0,0,0.15);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;font-family:'Inter',sans-serif;background:var(--gray-50);color:var(--dark);font-size:13px;}
+.shell{display:flex;height:100vh;overflow:hidden;}
+.right-panel{width:28%;flex-shrink:0;display:flex;flex-direction:column;border-left:1px solid var(--gray-200);background:var(--white);}
+
+/* SIDEBAR */
+.sidebar{width:10%;min-width:140px;flex-shrink:0;background:var(--white);border-right:1px solid var(--gray-200);display:flex;flex-direction:column;overflow-y:auto;}
+.sb-logo{padding:16px 18px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--gray-100);}
+.sb-logo svg{width:26px;height:26px;flex-shrink:0;}
+.sb-brand{font-family:'Montserrat',sans-serif;font-size:15px;font-weight:800;color:var(--dark);}
+.sb-sub{font-size:9px;font-weight:600;color:var(--gray-400);letter-spacing:1.5px;text-transform:uppercase;}
+.sb-sec{padding:14px 10px 6px;}
+.sb-sec-lbl{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--gray-300);font-family:'Montserrat',sans-serif;padding:0 8px;margin-bottom:5px;}
+.sb-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:var(--r);font-size:12px;font-weight:500;color:var(--gray-700);cursor:pointer;transition:background .13s,color .13s;}
+.sb-item:hover{background:var(--gray-50);color:var(--dark);}
+.sb-item.active{background:var(--teal-l);color:var(--teal-d);font-weight:700;}
+.sb-item .si{font-size:13px;width:16px;text-align:center;flex-shrink:0;}
+.sb-cnt{margin-left:auto;background:var(--gray-100);color:var(--gray-500);font-size:10px;font-weight:700;font-family:'Montserrat',sans-serif;padding:1px 6px;border-radius:10px;}
+.sb-item.active .sb-cnt{background:rgba(61,191,191,.15);color:var(--teal-d);}
+.sb-footer{margin-top:auto;padding:12px;border-top:1px solid var(--gray-100);font-size:10px;color:var(--gray-300);font-family:'Montserrat',sans-serif;font-weight:600;text-align:center;}
+
+/* CONTENT */
+.content{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+
+/* TOP NAV */
+.topnav{display:none;}
+.breadcrumb{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--gray-400);}
+.breadcrumb .sep{color:var(--gray-300);}
+.breadcrumb .cur{background:var(--dark);color:white;font-family:'Montserrat',sans-serif;font-size:11px;font-weight:700;padding:3px 11px;border-radius:20px;}
+.topnav-r{margin-left:auto;display:flex;align-items:center;gap:10px;}
+.csv-st{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:var(--gray-400);font-family:'Montserrat',sans-serif;}
+.csv-dot{width:7px;height:7px;border-radius:50%;background:#22C55E;flex-shrink:0;}
+.csv-dot.loading{background:#F59E0B;animation:blink 1s infinite;}
+.csv-dot.error{background:#EF4444;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+#csv-name{color:var(--dark);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 13px;border-radius:var(--r);border:1px solid transparent;font-size:11px;font-weight:700;font-family:'Montserrat',sans-serif;cursor:pointer;letter-spacing:.3px;transition:all .15s;text-decoration:none;}
+.btn-dark{background:var(--dark);color:white;border-color:var(--dark);}
+.btn-dark:hover{background:var(--dark2);}
+.btn-outline{background:white;color:var(--gray-700);border-color:var(--gray-200);}
+.btn-outline:hover{border-color:var(--teal);color:var(--teal);}
+.btn-teal{background:var(--teal);color:white;border-color:var(--teal);}
+.btn-teal:hover{background:var(--teal-d);}
+.btn-green{background:var(--green);color:white;border-color:var(--green);}
+.btn-red{background:var(--red);color:white;border-color:var(--red);}
+.btn[disabled]{opacity:.35;pointer-events:none;}
+#csvUpload{display:none;}
+
+/* FILTER BAR */
+.filter-bar{display:none;}
+.filter-row{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap;margin-bottom:8px;}
+.filter-row:last-child{margin-bottom:0;}
+.fg{display:flex;flex-direction:column;gap:3px;}
+.fg label{font-size:9px;font-weight:700;font-family:'Montserrat',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:var(--gray-400);}
+.fg input,.fg select{padding:6px 9px;border:1px solid var(--gray-200);border-radius:var(--r);font-size:12px;font-family:'Inter',sans-serif;color:var(--dark);background:var(--white);outline:none;transition:border .15s;min-width:130px;}
+.fg input:focus,.fg select:focus{border-color:var(--teal);}
+.fg input::placeholder{color:var(--gray-300);}
+.chip-grp{display:flex;gap:5px;flex-wrap:wrap;align-items:center;}
+.chip{padding:4px 11px;border-radius:20px;border:1px solid var(--gray-200);background:white;font-size:11px;font-weight:600;font-family:'Montserrat',sans-serif;color:var(--gray-500);cursor:pointer;transition:all .13s;white-space:nowrap;}
+.chip:hover{border-color:var(--teal);color:var(--teal);}
+.chip.active{background:var(--teal);border-color:var(--teal);color:white;}
+.echip{padding:4px 10px;border-radius:20px;border:1px solid var(--gray-200);background:white;font-size:10px;font-weight:700;font-family:'Montserrat',sans-serif;color:var(--gray-500);cursor:pointer;transition:all .13s;display:flex;align-items:center;gap:4px;}
+.echip:hover{border-color:var(--teal);color:var(--teal);}
+.echip.active{border-color:var(--teal);color:var(--teal-d);background:var(--teal-l);}
+.edot{width:7px;height:7px;border-radius:50%;}
+.filter-actions{display:flex;align-items:center;gap:8px;margin-left:auto;}
+.res-lbl{font-size:11px;font-weight:600;color:var(--gray-400);font-family:'Montserrat',sans-serif;white-space:nowrap;}
+.res-lbl strong{color:var(--teal-d);}
+
+/* STATS */
+.stats-row{display:flex;background:var(--white);border-bottom:1px solid var(--gray-200);flex-shrink:0;}
+.stat-cell{flex:1;padding:9px 0;text-align:center;border-right:1px solid var(--gray-100);}
+.stat-cell:last-child{border-right:none;}
+.stat-val{font-family:'Montserrat',sans-serif;font-size:19px;font-weight:800;color:var(--teal-d);}
+.stat-lbl{font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gray-400);margin-top:1px;font-family:'Montserrat',sans-serif;}
+
+/* BODY */
+.body-area{flex:1;overflow-y:auto;padding:18px 24px 40px;}
+
+/* MAP */
+.map-card{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--r);overflow:hidden;box-shadow:var(--sh);margin-bottom:16px;}
+.map-hd{padding:9px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--gray-100);}
+.map-hd h3{font-family:'Montserrat',sans-serif;font-size:10px;font-weight:700;color:var(--dark);text-transform:uppercase;letter-spacing:.5px;}
+.map-leg{display:flex;gap:12px;margin-left:auto;font-size:10px;font-weight:600;font-family:'Montserrat',sans-serif;color:var(--gray-500);}
+.map-leg span{display:flex;align-items:center;gap:4px;}
+.ldot{width:8px;height:8px;border-radius:50%;}
+#map{height:100%;min-height:200px;}
+/* ── PENDING PANEL ── */
+.pending-item{padding:10px 12px;border-radius:var(--r);border:1px solid var(--gray-100);background:var(--gray-50);margin-bottom:7px;cursor:pointer;transition:all .13s;display:flex;gap:10px;align-items:flex-start;}
+.pending-item:hover{border-color:var(--teal);background:var(--teal-l);}
+.pending-ico{font-size:16px;flex-shrink:0;margin-top:1px;}
+.pending-title{font-size:12px;font-weight:700;font-family:'Montserrat',sans-serif;color:var(--dark);line-height:1.35;}
+.pending-sub{font-size:11px;color:var(--gray-400);margin-top:3px;}
+.pending-tag{display:inline-block;font-size:9px;font-weight:800;font-family:'Montserrat',sans-serif;padding:1px 5px;border-radius:6px;margin-right:3px;}
+.pt-incomplete{background:#FEF3C7;color:#92400E;}
+.pt-homologacion{background:#EDE9FE;color:#5B21B6;}
+.pt-nocoords{background:#F3F4F6;color:#374151;}
+/* ── COMPLETENESS BAR ── */
+.compl-bar-wrap{height:3px;background:var(--gray-100);border-radius:3px;overflow:hidden;margin-top:5px;}
+.compl-bar-fill{height:100%;border-radius:3px;transition:width .3s;}
+.compl-pct{font-size:9px;font-weight:700;font-family:'Montserrat',sans-serif;color:var(--gray-400);margin-top:2px;}
+
+/* CARDS */
+.sec-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.sec-hd h3{font-family:'Montserrat',sans-serif;font-size:11px;font-weight:700;color:var(--dark);text-transform:uppercase;letter-spacing:.5px;}
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:11px;}
+
+.tcard{background:var(--white);border:1px solid var(--gray-200);border-radius:var(--r);padding:14px;cursor:pointer;box-shadow:var(--sh);transition:border-color .15s,box-shadow .15s,transform .13s;position:relative;}
+.tcard:hover{border-color:var(--teal);box-shadow:var(--sh-md);transform:translateY(-1px);}
+.tcard.selected{border-color:var(--teal);border-width:2px;box-shadow:0 0 0 3px rgba(61,191,191,.12);}
+.tcard-flag{position:absolute;top:11px;right:11px;font-size:15px;}
+.tcard-hd{display:flex;align-items:flex-start;gap:9px;margin-bottom:9px;}
+.tcard-ico{width:32px;height:32px;border-radius:6px;background:var(--teal-l);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+.tcard-name{font-family:'Montserrat',sans-serif;font-size:12px;font-weight:700;color:var(--dark);line-height:1.3;padding-right:20px;margin-bottom:2px;}
+.tcard-cadena{font-size:10px;font-weight:600;font-family:'Montserrat',sans-serif;padding:1px 7px;border-radius:10px;background:var(--gray-100);color:var(--gray-500);display:inline-block;}
+.tcard-tipos{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:7px;}
+.ttag{font-size:10px;font-weight:700;font-family:'Montserrat',sans-serif;padding:2px 7px;border-radius:10px;background:var(--green-bg);color:var(--green);}
+.tcard-loc{font-size:11px;color:var(--gray-300);margin-bottom:8px;}
+.tcard-foot{display:flex;align-items:center;justify-content:space-between;padding-top:7px;border-top:1px solid var(--gray-100);}
+.tcard-rating{font-size:11px;font-weight:700;color:#D97706;}
+.ebadge{font-size:10px;font-weight:700;font-family:'Montserrat',sans-serif;padding:2px 8px;border-radius:10px;}
+.e-Identificado{background:var(--blue-bg);color:var(--blue);}
+.e-Contactado{background:var(--amber-bg);color:var(--amber);}
+.e-Negociacion,.e-En-negociación{background:var(--pink-bg);color:var(--pink);}
+.e-Homologado{background:var(--green-bg);color:var(--green);}
+.e-Homologaci-n{background:#EDE9FE;color:#5B21B6;}
+.e-Homologación{background:#EDE9FE;color:#5B21B6;}
+.empty-st{grid-column:1/-1;text-align:center;padding:50px;background:var(--white);border-radius:var(--r);border:1px solid var(--gray-200);}
+.empty-st .ei{font-size:30px;margin-bottom:8px;}
+.empty-st p{font-size:12px;color:var(--gray-400);font-family:'Montserrat',sans-serif;font-weight:600;}
+
+/* ── MODAL ── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(20,20,35,.45);z-index:1000;align-items:center;justify-content:center;backdrop-filter:blur(3px);}
+.overlay.open{display:flex;}
+.modal{background:var(--white);border-radius:10px;width:700px;max-width:96vw;max-height:92vh;overflow-y:auto;box-shadow:var(--sh-lg);animation:up .18s ease;display:flex;flex-direction:column;}
+@keyframes up{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* VIEW / EDIT MODE INDICATOR */
+.mode-bar{display:flex;align-items:center;gap:10px;padding:8px 22px;background:var(--gray-50);border-bottom:1px solid var(--gray-100);flex-shrink:0;}
+.mode-pill{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:800;font-family:'Montserrat',sans-serif;letter-spacing:.8px;text-transform:uppercase;padding:3px 10px;border-radius:20px;}
+.mode-pill.view{background:var(--blue-bg);color:var(--blue);}
+.mode-pill.edit{background:var(--amber-bg);color:var(--amber);}
+.mode-hint{font-size:11px;color:var(--gray-400);font-family:'Montserrat',sans-serif;}
+
+/* In VIEW mode: inputs look like plain text */
+.modal.view-mode .ff input:not([readonly]),
+.modal.view-mode .ff select,
+.modal.view-mode .ff textarea{
+  background:transparent;border-color:transparent;color:var(--dark);
+  pointer-events:none;cursor:default;padding-left:0;
+}
+.modal.view-mode .ff input[readonly]{background:transparent;border-color:transparent;padding-left:0;}
+.modal.view-mode .ff label{color:var(--gray-300);}
+.modal.view-mode .tipo-cb{pointer-events:none;opacity:.85;}
+.modal.view-mode .estado-opt{pointer-events:none;}
+.modal.view-mode .dup-warn{display:none!important;}
+/* Empty fields in view mode */
+.modal.view-mode .ff input:placeholder-shown,
+.modal.view-mode .ff textarea:placeholder-shown{color:var(--gray-200);}
+
+/* In EDIT mode: normal styling */
+.modal.edit-mode .ff input:not([readonly]),
+.modal.edit-mode .ff select,
+.modal.edit-mode .ff textarea{
+  border-color:var(--gray-200);background:var(--white);
+  pointer-events:auto;cursor:text;
+}
+.modal.edit-mode .ff input:focus,
+.modal.edit-mode .ff select:focus,
+.modal.edit-mode .ff textarea:focus{border-color:var(--teal);}
+.modal.edit-mode .tipo-cb{pointer-events:auto;opacity:1;}
+.modal.edit-mode .estado-opt{pointer-events:auto;}
+
+/* Modal header */
+.mhead{background:var(--dark);padding:18px 22px 14px;border-radius:10px 10px 0 0;position:relative;flex-shrink:0;}
+.mhead-id{font-size:9px;font-family:'Montserrat',sans-serif;font-weight:700;letter-spacing:2px;color:var(--teal);margin-bottom:2px;text-transform:uppercase;}
+.mhead h2{font-family:'Montserrat',sans-serif;font-size:17px;font-weight:800;color:white;margin-bottom:2px;}
+.mhead-sub{font-size:11px;color:rgba(255,255,255,.4);font-family:'Montserrat',sans-serif;}
+.mclose{position:absolute;top:14px;right:14px;background:rgba(255,255,255,.1);border:none;color:white;width:26px;height:26px;border-radius:50%;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s;}
+.mclose:hover{background:rgba(255,255,255,.22);}
+
+/* Modal tabs */
+.mtabs{display:flex;border-bottom:1px solid var(--gray-100);background:var(--white);flex-shrink:0;}
+.mtab{padding:10px 18px;font-size:11px;font-weight:700;font-family:'Montserrat',sans-serif;color:var(--gray-400);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;letter-spacing:.3px;}
+.mtab:hover{color:var(--dark);}
+.mtab.active{color:var(--teal-d);border-bottom-color:var(--teal);}
+
+/* Modal body */
+.mbody{padding:18px 22px 20px;flex:1;}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+
+/* Form sections */
+.form-sec{margin-bottom:18px;}
+.form-sec-title{font-size:9px;font-weight:700;font-family:'Montserrat',sans-serif;letter-spacing:1.5px;text-transform:uppercase;color:var(--gray-300);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--gray-100);}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.form-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+.form-grid-1{display:grid;grid-template-columns:1fr;gap:10px;}
+.ff{display:flex;flex-direction:column;gap:3px;}
+.ff label{font-size:9px;font-weight:700;font-family:'Montserrat',sans-serif;letter-spacing:1px;text-transform:uppercase;color:var(--gray-400);}
+.ff input,.ff select,.ff textarea{padding:7px 9px;border:1px solid var(--gray-200);border-radius:var(--r);font-size:12px;font-family:'Inter',sans-serif;color:var(--dark);outline:none;transition:border .15s;background:var(--white);}
+.ff input:focus,.ff select:focus,.ff textarea:focus{border-color:var(--teal);}
+.ff input[readonly]{background:var(--gray-50);color:var(--gray-400);cursor:default;}
+.ff textarea{resize:vertical;min-height:60px;}
+.ff .hint{font-size:10px;color:var(--gray-300);}
+
+/* Tipos checkboxes */
+.tipos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:4px;}
+.tipo-cb{display:flex;align-items:center;gap:7px;padding:8px 10px;border-radius:var(--r);border:1px solid var(--gray-200);cursor:pointer;transition:all .13s;font-size:12px;font-weight:600;color:var(--gray-700);font-family:'Montserrat',sans-serif;}
+.tipo-cb:hover{border-color:var(--teal);}
+.tipo-cb input[type=checkbox]{accent-color:var(--teal);width:14px;height:14px;cursor:pointer;}
+.tipo-cb.checked{border-color:var(--teal);background:var(--teal-l);color:var(--teal-d);}
+
+/* Estado selector */
+.estado-opts{display:flex;gap:6px;flex-wrap:wrap;}
+.estado-opt{padding:5px 12px;border-radius:20px;border:1px solid var(--gray-200);font-size:11px;font-weight:700;font-family:'Montserrat',sans-serif;cursor:pointer;transition:all .13s;color:var(--gray-500);}
+.estado-opt:hover{border-color:var(--teal);}
+.estado-opt.sel-Identificado{background:var(--blue-bg);color:var(--blue);border-color:var(--blue);}
+.estado-opt.sel-Contactado{background:var(--amber-bg);color:var(--amber);border-color:var(--amber);}
+.estado-opt.sel-Negociacion{background:var(--pink-bg);color:var(--pink);border-color:var(--pink);}
+.estado-opt.sel-Homologado{background:var(--green-bg);color:var(--green);border-color:var(--green);}
+.estado-opt.sel-Homologaci-n,.estado-opt.sel-Homologación{background:#EDE9FE;color:#5B21B6;border-color:#8B5CF6;}
+
+/* Modal actions */
+.mactions{display:flex;gap:8px;flex-wrap:wrap;padding:14px 22px;border-top:1px solid var(--gray-100);flex-shrink:0;background:var(--gray-50);border-radius:0 0 10px 10px;}
+.mactions-l{margin-right:auto;display:flex;gap:8px;}
+
+/* Duplicate warning */
+.dup-warn{background:var(--red-bg);border:1px solid rgba(185,28,28,.2);border-radius:var(--r);padding:10px 14px;font-size:12px;color:var(--red);font-weight:600;margin-bottom:12px;display:none;}
+.dup-warn.show{display:block;}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--dark);color:white;padding:12px 18px;border-radius:var(--r);font-size:12px;font-weight:600;font-family:'Montserrat',sans-serif;box-shadow:var(--sh-lg);z-index:2000;opacity:0;transform:translateY(10px);transition:all .25s;pointer-events:none;}
+.toast.show{opacity:1;transform:translateY(0);}
+.toast.success{border-left:3px solid #22C55E;}
+.toast.error{border-left:3px solid #EF4444;}
+.toast.info{border-left:3px solid var(--teal);}
+
+@media(max-width:768px){
+  .sidebar{display:none;}
+  .body-area,.filter-bar,.topnav{padding-left:12px;padding-right:12px;}
+  .cards-grid{grid-template-columns:1fr;}
+  .form-grid,.form-grid-3{grid-template-columns:1fr;}
+}
+
+/* ── MAP VIEWPORT INFO BAR ── */
+.map-viewport-bar{
+  padding:6px 14px;background:var(--gray-50);border-top:1px solid var(--gray-100);
+  display:flex;align-items:center;gap:10px;font-size:11px;color:var(--gray-500);
+  font-family:'Montserrat',sans-serif;font-weight:600;
+}
+.map-viewport-bar .vp-count{color:var(--teal-d);font-weight:800;}
+.map-viewport-bar .vp-hint{margin-left:auto;font-size:10px;color:var(--gray-300);}
+/* Cluster icon override */
+.marker-cluster-small{background:rgba(61,191,191,0.25)!important;}
+.marker-cluster-small div{background:rgba(61,191,191,0.7)!important;color:#fff!important;font-family:'Montserrat',sans-serif!important;font-weight:800!important;}
+.marker-cluster-medium{background:rgba(45,49,66,0.2)!important;}
+.marker-cluster-medium div{background:rgba(45,49,66,0.6)!important;color:#fff!important;font-family:'Montserrat',sans-serif!important;font-weight:800!important;}
+.marker-cluster-large{background:rgba(176,28,28,0.2)!important;}
+.marker-cluster-large div{background:rgba(176,28,28,0.6)!important;color:#fff!important;font-family:'Montserrat',sans-serif!important;font-weight:800!important;}
+
+
+/* ── MERGE DIALOG ── */
+.merge-overlay{display:none;position:fixed;inset:0;background:rgba(20,20,35,.55);z-index:2000;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+.merge-overlay.open{display:flex;}
+.merge-box{background:var(--white);border-radius:10px;width:620px;max-width:95vw;max-height:88vh;overflow-y:auto;box-shadow:var(--sh-lg);animation:up .2s ease;}
+.merge-head{background:var(--dark);color:white;padding:18px 22px;border-radius:10px 10px 0 0;}
+.merge-head h3{font-family:'Montserrat',sans-serif;font-size:15px;font-weight:800;margin-bottom:3px;}
+.merge-head p{font-size:11px;color:rgba(255,255,255,.5);font-family:'Montserrat',sans-serif;}
+.merge-body{padding:18px 22px;}
+.merge-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px;}
+.mstat{background:var(--gray-50);border:1px solid var(--gray-100);border-radius:var(--r);padding:10px;text-align:center;}
+.mstat .mv{font-family:'Montserrat',sans-serif;font-size:20px;font-weight:800;color:var(--teal-d);}
+.mstat .ml{font-size:10px;font-weight:700;font-family:'Montserrat',sans-serif;color:var(--gray-400);text-transform:uppercase;letter-spacing:.5px;margin-top:2px;}
+.mstat.warn .mv{color:var(--amber);}
+.mstat.new .mv{color:var(--green);}
+.merge-options{display:flex;flex-direction:column;gap:8px;margin-bottom:18px;}
+.merge-opt{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;border:1.5px solid var(--gray-200);border-radius:var(--r);cursor:pointer;transition:all .15s;}
+.merge-opt:hover{border-color:var(--teal);}
+.merge-opt.selected{border-color:var(--teal);background:var(--teal-l);}
+.merge-opt input[type=radio]{accent-color:var(--teal);flex-shrink:0;margin-top:2px;}
+.merge-opt-title{font-family:'Montserrat',sans-serif;font-size:12px;font-weight:700;color:var(--dark);margin-bottom:2px;}
+.merge-opt-desc{font-size:11px;color:var(--gray-500);}
+.merge-preview{background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--r);padding:12px;margin-bottom:16px;max-height:160px;overflow-y:auto;}
+.merge-preview-title{font-size:10px;font-weight:700;font-family:'Montserrat',sans-serif;color:var(--gray-400);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;}
+.merge-preview-row{font-size:11px;padding:3px 0;border-bottom:1px solid var(--gray-100);display:flex;gap:8px;align-items:center;}
+.merge-preview-row:last-child{border:none;}
+.merge-badge{font-size:9px;font-weight:800;font-family:'Montserrat',sans-serif;padding:1px 6px;border-radius:8px;flex-shrink:0;}
+.mb-new{background:var(--green-bg);color:var(--green);}
+.mb-mod{background:var(--amber-bg);color:var(--amber);}
+.mb-dup{background:var(--red-bg);color:var(--red);}
+.mb-ok{background:var(--blue-bg);color:var(--blue);}
+.merge-foot{display:flex;gap:8px;padding:14px 22px;border-top:1px solid var(--gray-100);background:var(--gray-50);border-radius:0 0 10px 10px;}
+
+
+/* ── PROGRESS BAR ── */
+.progress-overlay{display:none;position:fixed;inset:0;background:rgba(20,20,35,.6);z-index:3000;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+.progress-overlay.open{display:flex;}
+.progress-box{background:var(--white);border-radius:12px;padding:32px 36px;width:420px;max-width:92vw;box-shadow:var(--sh-lg);text-align:center;}
+.progress-icon{font-size:32px;margin-bottom:12px;}
+.progress-title{font-family:'Montserrat',sans-serif;font-size:15px;font-weight:800;color:var(--dark);margin-bottom:4px;}
+.progress-sub{font-size:12px;color:var(--gray-400);margin-bottom:20px;font-family:'Montserrat',sans-serif;}
+.progress-bar-wrap{background:var(--gray-100);border-radius:20px;height:10px;overflow:hidden;margin-bottom:10px;}
+.progress-bar-fill{height:100%;border-radius:20px;background:linear-gradient(90deg,var(--teal),var(--teal-d));transition:width .3s ease;width:0%;}
+.progress-pct{font-family:'Montserrat',sans-serif;font-size:22px;font-weight:900;color:var(--teal-d);margin-bottom:4px;}
+.progress-detail{font-size:11px;color:var(--gray-400);font-family:'Montserrat',sans-serif;}
+
+/* ── GOOGLE MAPS IMPORT ── */
+.gmaps-section{margin-bottom:18px;}
+.gmaps-input-wrap{display:flex;gap:8px;align-items:stretch;}
+.gmaps-input{flex:1;padding:8px 12px;border:1px solid var(--gray-200);border-radius:var(--r);font-size:12px;font-family:'Inter',sans-serif;outline:none;transition:border .15s;}
+.gmaps-input:focus{border-color:var(--teal);}
+.gmaps-result{background:var(--teal-l);border:1px solid rgba(61,191,191,.3);border-radius:var(--r);padding:12px 14px;margin-top:10px;display:none;}
+.gmaps-result.show{display:block;}
+.gmaps-result-title{font-family:'Montserrat',sans-serif;font-size:12px;font-weight:800;color:var(--teal-d);margin-bottom:6px;}
+.gmaps-result-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px;color:var(--gray-600);}
+.gmaps-result-field{display:flex;flex-direction:column;gap:1px;}
+.gmaps-result-field label{font-size:9px;font-weight:700;font-family:'Montserrat',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:var(--gray-400);}
+.gmaps-result-field span{font-weight:600;color:var(--dark);}
+.gmaps-error{background:var(--red-bg);border:1px solid rgba(185,28,28,.2);border-radius:var(--r);padding:10px 14px;margin-top:8px;font-size:12px;color:var(--red);font-weight:600;display:none;}
+.gmaps-error.show{display:block;}
+
+
+/* ── SIDEBAR KPIs ── */
+.sb-kpis{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:10px 12px;border-bottom:1px solid var(--gray-100);}
+.sb-kpi{background:var(--gray-50);border-radius:6px;padding:7px 8px;text-align:center;border:1px solid var(--gray-100);}
+.sb-kpi-val{display:block;font-family:'Montserrat',sans-serif;font-size:15px;font-weight:800;color:var(--teal-d);line-height:1.1;}
+.sb-kpi-lbl{display:block;font-family:'Montserrat',sans-serif;font-size:9px;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:.5px;margin-top:2px;}
+/* Nav items – dimmed for unimplemented modules */
+.sb-nav[data-mod="talleres"]{color:var(--teal-d);font-weight:700;}
+.sb-nav:not([data-mod="talleres"]):not([data-mod="importexport"]){opacity:.55;}
+.sb-nav:not([data-mod="talleres"]):not([data-mod="importexport"]):hover{opacity:.8;}
+.sb-nav[data-mod="importexport"]{color:var(--dark);}
+
+/* ── CONTROL CENTER ── */
+.control-center{background:var(--white);border-bottom:1px solid var(--gray-200);flex-shrink:0;padding:0;}
+.cc-row{display:flex;align-items:center;gap:10px;padding:8px 16px;flex-wrap:wrap;}
+.cc-row-top{border-bottom:1px solid var(--gray-100);padding:9px 16px;}
+.cc-row-filters{border-bottom:1px solid var(--gray-100);padding:7px 16px;background:var(--gray-50);}
+.cc-row-chips{padding:7px 16px;}
+.cc-search-wrap{position:relative;flex:1;min-width:240px;max-width:420px;}
+.cc-search-ico{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:12px;pointer-events:none;}
+.cc-search{width:100%;padding:7px 10px 7px 30px;border:1px solid var(--gray-200);border-radius:var(--r);font-size:12px;font-family:'Inter',sans-serif;outline:none;transition:border .15s;box-sizing:border-box;}
+.cc-search:focus{border-color:var(--teal);}
+.cc-db-status{display:flex;align-items:center;gap:6px;}
+.cc-actions{display:flex;align-items:center;gap:7px;margin-left:auto;flex-wrap:wrap;}
+
+
+/* ── KPI BAR ── */
+.kpi-bar{display:flex;background:var(--white);border-bottom:2px solid var(--gray-100);flex-shrink:0;overflow-x:auto;}
+.kpi-cell{flex:1;min-width:80px;padding:10px 6px 8px;text-align:center;border-right:1px solid var(--gray-100);position:relative;}
+.kpi-cell:last-child{border-right:none;}
+.kpi-cell.kpi-accent{background:var(--dark);}
+.kpi-cell.kpi-accent .kpi-val{color:#fff;font-size:22px;}
+.kpi-cell.kpi-accent .kpi-lbl{color:rgba(255,255,255,.6);}
+.kpi-cell.kpi-dim .kpi-val{color:var(--gray-400);}
+.kpi-val{font-family:'Montserrat',sans-serif;font-size:18px;font-weight:900;color:var(--dark);line-height:1.1;margin-bottom:3px;}
+.kpi-lbl{font-family:'Montserrat',sans-serif;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--gray-400);}
+.kpi-sub{font-family:'Inter',sans-serif;font-size:9px;color:var(--gray-300);margin-top:2px;}
+.kpi-green{color:#059669;}
+.kpi-violet{color:#7C3AED;}
+.kpi-amber{color:#D97706;}
+.kpi-teal{color:var(--teal-d);}
+.kpi-blue{color:#2563EB;}
+.kpi-gray{color:var(--gray-500);}
+/* ── CHIP COUNTERS ── */
+.chip-cnt{display:inline-block;margin-left:5px;font-size:9px;font-weight:800;background:rgba(0,0,0,.08);border-radius:8px;padding:0 5px;vertical-align:middle;font-family:'Montserrat',sans-serif;line-height:16px;}
+.chip.active .chip-cnt{background:rgba(255,255,255,.3);color:#fff;}
+.echip .chip-cnt{margin-left:4px;background:rgba(0,0,0,.07);}
+.echip.active .chip-cnt{background:rgba(255,255,255,.3);color:var(--dark);}
+
+
+/* ── PROXIMITY BAR ── */
+.prox-bar{display:flex;align-items:center;gap:9px;padding:9px 16px;background:linear-gradient(90deg,#F0FDFA,#EFF6FF);border-bottom:1px solid #BFDBFE;flex-shrink:0;flex-wrap:wrap;}
+.prox-icon{font-size:16px;flex-shrink:0;}
+.prox-label{font-size:11px;font-weight:700;font-family:'Montserrat',sans-serif;color:#1E40AF;white-space:nowrap;flex-shrink:0;}
+.prox-input-wrap{flex:1;min-width:220px;max-width:400px;}
+.prox-input-wrap input{width:100%;padding:7px 11px;border:1.5px solid #93C5FD;border-radius:var(--r);font-size:12px;font-family:'Inter',sans-serif;outline:none;background:white;box-sizing:border-box;transition:border .15s;}
+.prox-input-wrap input:focus{border-color:#3B82F6;}
+.prox-loc-btn{font-size:11px;padding:6px 10px;white-space:nowrap;}
+.prox-status{font-size:11px;font-family:'Montserrat',sans-serif;font-weight:600;color:var(--gray-400);flex-shrink:0;}
+.prox-limit-wrap{display:flex;align-items:center;gap:5px;flex-shrink:0;}
+
+/* ── PROXIMITY MODAL ── */
+.prox-overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:2500;align-items:flex-start;justify-content:center;padding:40px 20px;backdrop-filter:blur(3px);overflow-y:auto;}
+.prox-overlay.open{display:flex;}
+.prox-modal{background:white;border-radius:12px;width:100%;max-width:860px;box-shadow:0 24px 60px rgba(0,0,0,.18);animation:up .2s ease;display:flex;flex-direction:column;max-height:80vh;}
+.prox-modal-head{background:var(--dark);padding:16px 20px;border-radius:12px 12px 0 0;display:flex;align-items:center;gap:12px;flex-shrink:0;}
+.prox-modal-title{font-family:'Montserrat',sans-serif;font-size:14px;font-weight:800;color:white;}
+.prox-modal-sub{font-size:11px;color:rgba(255,255,255,.5);margin-top:3px;font-family:'Montserrat',sans-serif;}
+.prox-results{overflow-y:auto;padding:12px 16px;flex:1;}
+
+/* ── PROXIMITY RESULT ITEMS ── */
+.prox-item{display:flex;align-items:center;gap:12px;padding:11px 13px;border:1px solid var(--gray-100);border-radius:8px;margin-bottom:8px;cursor:pointer;transition:all .13s;background:white;}
+.prox-item:hover{border-color:var(--teal);background:var(--teal-l);box-shadow:0 2px 8px rgba(61,191,191,.12);}
+.prox-rank{width:26px;height:26px;border-radius:50%;background:var(--dark);color:white;font-family:'Montserrat',sans-serif;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.prox-rank.top3{background:var(--teal-d);}
+.prox-dist{text-align:right;flex-shrink:0;min-width:60px;}
+.prox-dist-val{font-family:'Montserrat',sans-serif;font-size:15px;font-weight:900;color:var(--teal-d);line-height:1;}
+.prox-dist-lbl{font-size:9px;font-weight:700;font-family:'Montserrat',sans-serif;color:var(--gray-400);text-transform:uppercase;letter-spacing:.5px;}
+.prox-info{flex:1;min-width:0;}
+.prox-name{font-family:'Montserrat',sans-serif;font-size:13px;font-weight:800;color:var(--dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.prox-meta{font-size:11px;color:var(--gray-400);margin-top:2px;}
+.prox-tipos{display:flex;gap:4px;flex-wrap:wrap;margin-top:5px;}
+.prox-contact{flex-shrink:0;text-align:right;font-size:11px;color:var(--gray-500);}
+.prox-tel{font-weight:600;color:var(--dark);font-family:'Montserrat',sans-serif;}
+.prox-empty{text-align:center;padding:40px;color:var(--gray-400);font-size:13px;font-family:'Montserrat',sans-serif;}
+
+
+/* ── ENRICH OVERLAY ── */
+.enrich-overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:3500;align-items:center;justify-content:center;padding:40px 20px;backdrop-filter:blur(3px);}
+.enrich-overlay.open{display:flex;}
+.enrich-modal{background:white;border-radius:12px;width:100%;max-width:680px;box-shadow:0 24px 60px rgba(0,0,0,.2);display:flex;flex-direction:column;max-height:80vh;animation:up .2s ease;}
+.enrich-head{background:var(--dark);padding:16px 20px;border-radius:12px 12px 0 0;display:flex;align-items:center;gap:12px;flex-shrink:0;}
+.enrich-title{font-family:'Montserrat',sans-serif;font-size:14px;font-weight:800;color:white;}
+.enrich-sub{font-size:11px;color:rgba(255,255,255,.5);margin-top:3px;font-family:'Montserrat',sans-serif;}
+.enrich-body{overflow-y:auto;padding:16px 20px;flex:1;}
+.enrich-foot{padding:12px 20px;border-top:1px solid var(--gray-100);background:var(--gray-50);display:flex;align-items:center;gap:10px;border-radius:0 0 12px 12px;flex-shrink:0;}
+/* Suggestions table */
+.enrich-table{width:100%;border-collapse:collapse;font-size:12px;}
+.enrich-table th{background:var(--dark);color:white;padding:8px 10px;text-align:left;font-family:'Montserrat',sans-serif;font-size:11px;font-weight:700;}
+.enrich-table td{padding:9px 10px;border-bottom:1px solid var(--gray-100);vertical-align:middle;}
+.enrich-table tr:last-child td{border-bottom:none;}
+.enrich-table tr:hover td{background:var(--gray-50);}
+.enrich-badge-new{display:inline-block;padding:1px 7px;border-radius:6px;background:#ECFDF5;color:#065F46;font-size:10px;font-weight:700;font-family:'Montserrat',sans-serif;margin-left:4px;}
+.enrich-badge-change{display:inline-block;padding:1px 7px;border-radius:6px;background:#FEF3C7;color:#92400E;font-size:10px;font-weight:700;font-family:'Montserrat',sans-serif;margin-left:4px;}
+.enrich-val-new{color:#059669;font-weight:700;}
+.enrich-val-change{color:#D97706;font-weight:700;}
+.enrich-empty{text-align:center;padding:32px;color:var(--gray-400);font-family:'Montserrat',sans-serif;font-size:12px;}
+.enrich-loading{text-align:center;padding:32px;color:var(--gray-500);font-family:'Montserrat',sans-serif;}
+
+
+.settings-overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:4000;align-items:center;justify-content:center;padding:40px 20px;backdrop-filter:blur(3px);}
+.settings-overlay.open{display:flex;}
+.settings-modal{background:white;border-radius:12px;width:100%;max-width:560px;box-shadow:0 24px 60px rgba(0,0,0,.2);display:flex;flex-direction:column;max-height:85vh;animation:up .2s ease;}
+/* AI badge in enrich modal */
+.enrich-badge-ai{display:inline-block;padding:1px 7px;border-radius:6px;background:#EDE9FE;color:#5B21B6;font-size:10px;font-weight:700;font-family:'Montserrat',sans-serif;margin-left:4px;}
+.enrich-badge-ok{display:inline-block;padding:1px 7px;border-radius:6px;background:#F3F4F6;color:#6B7280;font-size:10px;font-weight:700;font-family:'Montserrat',sans-serif;margin-left:4px;}
+
+
+/* ── PRECIOS TAB ── */
+/* uses existing form styles */
+
+/* ── SEGUIMIENTO / COMMENTS ── */
+.comment-item{background:var(--gray-50);border:1px solid var(--gray-100);border-radius:8px;padding:10px 14px;margin-bottom:10px;}
+.comment-item:first-child{border-color:var(--teal);background:#F0FDFA;}
+.comment-meta{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.comment-autor{font-family:'Montserrat',sans-serif;font-size:12px;font-weight:800;color:var(--dark);}
+.comment-fecha{font-size:10px;color:var(--gray-400);font-family:'Montserrat',sans-serif;}
+.comment-badge{font-size:9px;font-weight:700;background:var(--teal);color:white;padding:1px 6px;border-radius:4px;font-family:'Montserrat',sans-serif;margin-left:auto;}
+.comment-texto{font-size:12px;color:var(--gray-600,#374151);line-height:1.5;}
+.no-comments{text-align:center;padding:24px;color:var(--gray-300);font-size:12px;font-family:'Montserrat',sans-serif;}
+
+/* ── ENRICH: campo no encontrado ── */
+.enrich-badge-missing{display:inline-block;padding:1px 7px;border-radius:6px;background:#F3F4F6;color:#9CA3AF;font-size:10px;font-weight:700;font-family:'Montserrat',sans-serif;margin-left:4px;}
+.enrich-row-missing td{opacity:.5;}
+
+
+/* ── SEGUIMIENTO: siempre editable ── */
+#tab-seguimiento input, #tab-seguimiento textarea, #tab-seguimiento button {
+  pointer-events: auto !important;
+  opacity: 1 !important;
+}
+
+
+/* ── CONTACT FIELD WRAP ── */
+.contact-field-wrap{display:flex;gap:5px;align-items:center;}
+.contact-field-wrap input{flex:1;}
+.contact-btn{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:6px;background:var(--gray-50);border:1px solid var(--gray-200);cursor:pointer;font-size:14px;text-decoration:none;flex-shrink:0;transition:background .13s;}
+.contact-btn:hover{background:var(--teal-l);border-color:var(--teal);}
+
+
+.tcard-alert{font-size:9px;font-weight:700;font-family:'Montserrat',sans-serif;color:#B45309;background:#FEF3C7;border-radius:4px;padding:2px 6px;margin-top:3px;display:inline-block;}
+.tcard-mod{font-size:9px;color:var(--gray-300);font-family:'Montserrat',sans-serif;margin-top:3px;}
+
+
+/* ── GITHUB STATUS ── */
+.gh-bar{display:flex;align-items:center;gap:8px;padding:5px 16px;background:#f6f8fa;border-bottom:1px solid #d0d7de;font-size:10px;font-family:'Montserrat',sans-serif;font-weight:600;color:#57606a;flex-shrink:0;}
+.gh-bar-ico{font-size:13px;}
+.gh-dot{width:7px;height:7px;border-radius:50%;display:inline-block;flex-shrink:0;}
+.gh-dot.ok{background:#2da44e;}
+.gh-dot.warn{background:#bf8700;}
+.gh-dot.err{background:#cf222e;}
+.gh-dot.off{background:#d0d7de;}
+
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <!-- Logo -->
+  <div class="sb-logo">
+    <svg viewBox="0 0 26 26" fill="none">
+      <circle cx="13" cy="13" r="11" stroke="#3DBFBF" stroke-width="2"/>
+      <circle cx="13" cy="13" r="5.5" fill="#3DBFBF" opacity=".22"/>
+      <path d="M13 8v10M8 13h10" stroke="#3DBFBF" stroke-width="1.8" stroke-linecap="round"/>
+    </svg>
+    <div><div class="sb-brand">Mobius</div><div class="sb-sub">Network Hub</div></div>
+  </div>
+
+  <!-- KPIs de red -->
+  <div class="sb-kpis">
+    <div class="sb-kpi"><span class="sb-kpi-val" id="kpi-total">—</span><span class="sb-kpi-lbl">Talleres</span></div>
+    <div class="sb-kpi"><span class="sb-kpi-val" id="kpi-hom">—</span><span class="sb-kpi-lbl">Homologados</span></div>
+    <div class="sb-kpi"><span class="sb-kpi-val" id="kpi-pend">—</span><span class="sb-kpi-lbl">En proceso</span></div>
+    <div class="sb-kpi"><span class="sb-kpi-val" id="kpi-compl">—%</span><span class="sb-kpi-lbl">Completitud</span></div>
+  </div>
+
+  <!-- Navegación principal -->
+  <div class="sb-sec">
+    <div class="sb-sec-lbl">Plataforma</div>
+    <div class="sb-item sb-nav" data-mod="dashboard"><span class="si">📊</span>Dashboard</div>
+    <div class="sb-item sb-nav active" data-mod="talleres"><span class="si">🔧</span>Talleres</div>
+    <div class="sb-item sb-nav" data-mod="cobertura"><span class="si">🗺️</span>Cobertura</div>
+    <div class="sb-item sb-nav" data-mod="captacion"><span class="si">🎯</span>Captación</div>
+    <div class="sb-item sb-nav" data-mod="homologaciones"><span class="si">📋</span>Homologaciones</div>
+    <div class="sb-item sb-nav" data-mod="calidad"><span class="si">✅</span>Calidad datos</div>
+    <div class="sb-item sb-nav" data-mod="direccionamiento"><span class="si">🚗</span>Direccionamiento</div>
+    <div class="sb-item sb-nav" data-mod="importexport"><span class="si">📂</span>Importar / Exportar</div>
+    <div class="sb-item sb-nav" data-mod="config"><span class="si">⚙️</span>Configuración</div>
+  </div>
+
+  <!-- Países rápido -->
+  <div class="sb-sec">
+    <div class="sb-sec-lbl">Por país</div>
+    <div class="sb-item" onclick="sbFilter('pais','')"><span class="si">🌍</span>Todos<span class="sb-cnt" id="sc-todos">—</span></div>
+    <div class="sb-item" onclick="sbFilter('pais','Portugal')"><span class="si">🇵🇹</span>Portugal<span class="sb-cnt" id="sc-PT">—</span></div>
+    <div class="sb-item" onclick="sbFilter('pais','España')"><span class="si">🇪🇸</span>España<span class="sb-cnt" id="sc-ES">—</span></div>
+    <div class="sb-item" onclick="sbFilter('pais','Francia')"><span class="si">🇫🇷</span>Francia<span class="sb-cnt" id="sc-FR">—</span></div>
+  </div>
+
+  <div class="sb-footer">v4.0 · Procurement · Mobius</div>
+</aside>
+
+<!-- CONTENT -->
+<div class="content">
+  <!-- GitHub status bar -->
+  <div class="gh-bar" id="gh-bar" style="display:none">
+    <span class="gh-bar-ico">🐙</span>
+    <div class="gh-dot off" id="gh-dot"></div>
+    <span id="gh-bar-text">GitHub no configurado</span>
+    <span style="margin-left:auto;opacity:.6" id="gh-bar-sha"></span>
+  </div>
+  <!-- ══ CENTRO DE CONTROL ══ -->
+  <div class="control-center">
+
+    <!-- Fila 1: búsqueda global + estado BD + acciones -->
+    <div class="cc-row cc-row-top">
+      <!-- Buscador global -->
+      <div class="cc-search-wrap">
+        <span class="cc-search-ico">🔍</span>
+        <input type="text" id="searchInput" class="cc-search"
+          placeholder="Buscar por nombre, CIF, cadena, dirección, CP, municipio, provincia…">
+      </div>
+      <!-- Estado BD -->
+      <div class="cc-db-status">
+        <div class="csv-st"><div class="csv-dot loading" id="csv-dot"></div><span id="csv-name" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Cargando…</span></div>
+      </div>
+      <!-- Acciones rápidas -->
+      <div class="cc-actions">
+        <label class="btn btn-outline" style="cursor:pointer" title="Cargar fichero CSV">📂 Cargar<input type="file" id="csvUpload" accept=".csv" onchange="loadFromFile(this)"></label>
+        <button class="btn btn-outline" onclick="reloadCSV()" title="Actualizar desde fichero">↺</button>
+        <button class="btn btn-outline" onclick="openGMapsDialog()" title="Importar desde Google Maps">📍 Maps</button>
+        <button class="btn btn-outline" onclick="exportCSV()" title="Exportar CSV local">📥 Exportar</button>
+        <button class="btn btn-outline" id="btn-gh-load" onclick="ghLoad()" title="Cargar CSV desde GitHub" style="background:#f6f8fa;border-color:#d0d7de">🐙 Cargar</button>
+        <button class="btn btn-teal" id="btn-gh-publish" onclick="ghPublish()" title="Publicar cambios en GitHub" style="display:none">🐙 Publicar</button>
+        <button class="btn btn-dark" onclick="openNewTaller()">+ Nuevo taller</button>
+      </div>
+    </div>
+
+    <!-- Fila 2: filtros dinámicos -->
+    <div class="cc-row cc-row-filters">
+      <div class="fg"><label>País</label><select id="paisFilter" onchange="renderAll()"><option value="">Todos</option></select></div>
+      <div class="fg"><label>Provincia</label><select id="provFilter" onchange="renderAll()"><option value="">Todas</option></select></div>
+      <div class="fg"><label>Distrito</label><select id="distFilter" onchange="renderAll()"><option value="">Todos</option></select></div>
+      <div class="fg"><label>Cadena</label><select id="cadenaFilter" onchange="renderAll()"><option value="">Todas</option></select></div>
+      <div class="fg"><label>Completitud</label>
+        <select id="complFilter" onchange="renderAll()">
+          <option value="">Cualquiera</option>
+          <option value="alta">Alta (≥80%)</option>
+          <option value="media">Media (60–79%)</option>
+          <option value="baja">Baja (&lt;60%)</option>
+        </select>
+      </div>
+      <div class="filter-actions" style="margin-left:auto;align-self:flex-end">
+        <span class="res-lbl"><strong id="res-cnt">—</strong> resultados</span>
+        <button class="btn btn-outline" onclick="clearFilters()">✕ Limpiar</button>
+      </div>
+    </div>
+
+    <!-- Fila 3: chips especialidad + estado -->
+    <div class="cc-row cc-row-chips">
+      <div class="fg"><label>Especialidad</label>
+        <div class="chip-grp">
+          <div class="chip active" data-tipo="todos" onclick="selTipo(this)">Todos<span class="chip-cnt" id="cnt-tipo-todos"></span></div>
+          <div class="chip" data-tipo="Carroceria" onclick="selTipo(this)">🚗 Carrocería<span class="chip-cnt" id="cnt-tipo-Carroceria"></span></div>
+          <div class="chip" data-tipo="Pintura" onclick="selTipo(this)">🎨 Pintura<span class="chip-cnt" id="cnt-tipo-Pintura"></span></div>
+          <div class="chip" data-tipo="Mec_Ligera" onclick="selTipo(this)">⚙️ Mec. Ligera<span class="chip-cnt" id="cnt-tipo-Mec_Ligera"></span></div>
+          <div class="chip" data-tipo="Mec_Pesada" onclick="selTipo(this)">🚛 Mec. Pesada<span class="chip-cnt" id="cnt-tipo-Mec_Pesada"></span></div>
+          <div class="chip" data-tipo="Neumaticos" onclick="selTipo(this)">⭕ Neumáticos<span class="chip-cnt" id="cnt-tipo-Neumaticos"></span></div>
+          <div class="chip" data-tipo="Lunas" onclick="selTipo(this)">🔍 Lunas<span class="chip-cnt" id="cnt-tipo-Lunas"></span></div>
+          <div class="chip" data-tipo="Electrico" onclick="selTipo(this)">⚡ Eléctrico<span class="chip-cnt" id="cnt-tipo-Electrico"></span></div>
+          <div class="chip" data-tipo="ADAS" onclick="selTipo(this)">📡 ADAS<span class="chip-cnt" id="cnt-tipo-ADAS"></span></div>
+          <div class="chip" data-tipo="Otros" onclick="selTipo(this)">➕ Otros<span class="chip-cnt" id="cnt-tipo-Otros"></span></div>
+        </div>
+      </div>
+      <div class="fg" style="margin-left:auto"><label>Estado Mobius</label>
+        <div class="chip-grp">
+          <div class="echip active" data-estado="" onclick="selEstado(this)"><div class="edot" style="background:var(--gray-300)"></div>Todos<span class="chip-cnt" id="cnt-est-todos"></span></div>
+          <div class="echip" data-estado="Identificado" onclick="selEstado(this)"><div class="edot" style="background:#60A5FA"></div>Identificado<span class="chip-cnt" id="cnt-est-Identificado"></span></div>
+          <div class="echip" data-estado="Contactado" onclick="selEstado(this)"><div class="edot" style="background:#FBBF24"></div>Contactado<span class="chip-cnt" id="cnt-est-Contactado"></span></div>
+          <div class="echip" data-estado="En negociación" onclick="selEstado(this)"><div class="edot" style="background:#F472B6"></div>Negociación<span class="chip-cnt" id="cnt-est-Ennegociacion"></span></div>
+          <div class="echip" data-estado="Homologación" onclick="selEstado(this)"><div class="edot" style="background:#8B5CF6"></div>Homologación<span class="chip-cnt" id="cnt-est-Homologacion"></span></div>
+          <div class="echip" data-estado="Homologado" onclick="selEstado(this)"><div class="edot" style="background:#4ADE80"></div>Homologado<span class="chip-cnt" id="cnt-est-Homologado"></span></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /control-center -->
+
+  <!-- KPI BAR -->
+  <div class="kpi-bar">
+    <div class="kpi-cell kpi-accent">
+      <div class="kpi-val" id="s-total">—</div>
+      <div class="kpi-lbl">Talleres</div>
+    </div>
+    <div class="kpi-cell">
+      <div class="kpi-val kpi-green" id="s-pct-hom">—%</div>
+      <div class="kpi-lbl">Homologados</div>
+      <div class="kpi-sub" id="s-n-hom">— talleres</div>
+    </div>
+    <div class="kpi-cell">
+      <div class="kpi-val kpi-violet" id="s-pct-proc">—%</div>
+      <div class="kpi-lbl">En proceso</div>
+      <div class="kpi-sub" id="s-n-proc">— talleres</div>
+    </div>
+    <div class="kpi-cell">
+      <div class="kpi-val kpi-amber" id="s-pct-alcance">—%</div>
+      <div class="kpi-lbl">Tasa de alcance</div>
+      <div class="kpi-sub">Con contacto real</div>
+    </div>
+    <div class="kpi-cell">
+      <div class="kpi-val kpi-teal" id="s-pct-stars">—%</div>
+      <div class="kpi-lbl">Rating ≥4.5★</div>
+      <div class="kpi-sub" id="s-n-stars">— talleres</div>
+    </div>
+    <div class="kpi-cell">
+      <div class="kpi-val kpi-blue" id="s-consolidacion">—%</div>
+      <div class="kpi-lbl">Consolidación</div>
+      <div class="kpi-sub">Red activa vs pendiente</div>
+    </div>
+    <div class="kpi-cell">
+      <div class="kpi-val kpi-gray" id="s-completitud">—%</div>
+      <div class="kpi-lbl">Completitud media</div>
+      <div class="kpi-sub">Calidad de datos</div>
+    </div>
+    <div class="kpi-cell">
+      <div class="kpi-val kpi-gray" id="s-geolocalizados">—%</div>
+      <div class="kpi-lbl">Geolocalizados</div>
+      <div class="kpi-sub">Visibles en mapa</div>
+    </div>
+    <div class="kpi-cell kpi-dim">
+      <div class="kpi-val" id="s-modificados">—</div>
+      <div class="kpi-lbl">Sin exportar</div>
+    </div>
+  </div>
+
+
+  <!-- ── BARRA DE PROXIMIDAD ── -->
+  <div class="prox-bar">
+    <div class="prox-icon">🚗</div>
+    <div class="prox-label">Talleres cercanos a:</div>
+    <div class="prox-input-wrap">
+      <input type="text" id="proxInput"
+        placeholder="Introduce una dirección, ciudad o código postal…"
+        onkeydown="if(event.key==='Enter')searchProximity()">
+    </div>
+    <button class="btn btn-outline prox-loc-btn" onclick="useMyLocation()" title="Usar mi ubicación actual">📍 Mi ubicación</button>
+    <button class="btn btn-teal" onclick="searchProximity()">Buscar cercanos</button>
+    <div class="prox-limit-wrap">
+      <label style="font-size:10px;font-weight:700;font-family:'Montserrat',sans-serif;color:var(--gray-400);">Mostrar</label>
+      <select id="proxLimit" style="padding:4px 6px;border:1px solid var(--gray-200);border-radius:var(--r);font-size:11px;font-family:'Montserrat',sans-serif;">
+        <option value="10">10</option>
+        <option value="20" selected>20</option>
+        <option value="50">50</option>
+        <option value="0">Todos</option>
+      </select>
+    </div>
+    <div id="prox-status" class="prox-status"></div>
+  </div>
+
+  <!-- ── MODAL PROXIMIDAD ── -->
+  <div class="prox-overlay" id="proxOverlay" onclick="if(event.target===this)closeProximity()">
+    <div class="prox-modal">
+      <div class="prox-modal-head">
+        <div>
+          <div class="prox-modal-title" id="prox-modal-title">Talleres más cercanos</div>
+          <div class="prox-modal-sub" id="prox-modal-sub"></div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;margin-left:auto">
+          <select id="proxEspFilter" onchange="renderProximityResults()"
+            style="padding:5px 8px;border:1px solid var(--gray-200);border-radius:var(--r);font-size:11px;font-family:'Montserrat',sans-serif;">
+            <option value="">Todas las especialidades</option>
+            <option value="Carroceria">🚗 Carrocería</option>
+            <option value="Pintura">🎨 Pintura</option>
+            <option value="Mec_Ligera">⚙️ Mec. Ligera</option>
+            <option value="Mec_Pesada">🚛 Mec. Pesada</option>
+            <option value="Neumaticos">⭕ Neumáticos</option>
+            <option value="Lunas">🔍 Lunas</option>
+            <option value="Electrico">⚡ Eléctrico</option>
+            <option value="ADAS">📡 ADAS</option>
+          </select>
+          <button class="btn btn-outline" onclick="closeProximity()">✕ Cerrar</button>
+        </div>
+      </div>
+      <div id="prox-results" class="prox-results"></div>
+    </div>
+  </div>
+
+  <!-- BODY -->
+  <div class="body-area">
+    <div class="sec-hd"><h3>Talleres</h3></div>
+    <div class="cards-grid" id="cardsGrid"></div>
+  </div>
+</div><!-- /content -->
+
+<!-- RIGHT PANEL -->
+<div class="right-panel">
+  <!-- MAP ZONE (60%) -->
+  <div class="map-card" style="flex:0 0 50%;display:flex;flex-direction:column;border:none;border-bottom:1px solid var(--gray-200);border-radius:0;box-shadow:none;margin:0;">
+    <div class="map-hd">
+      <h3>📍 Mapa de talleres</h3>
+      <div class="map-leg" style="flex-wrap:wrap;gap:6px 10px;margin-top:2px;">
+        <span><div class="ldot" style="background:#60A5FA"></div>Identificado</span>
+        <span><div class="ldot" style="background:#FBBF24"></div>Contactado</span>
+        <span><div class="ldot" style="background:#F472B6"></div>Negociación</span>
+        <span><div class="ldot" style="background:#8B5CF6"></div>Homologación</span>
+        <span><div class="ldot" style="background:#4ADE80"></div>Homologado</span>
+      </div>
+    </div>
+    <div id="map" style="flex:1;min-height:0;"></div>
+    <div class="map-viewport-bar">
+      <span>Mostrando <span class="vp-count" id="vp-count">—</span> de <span id="vp-total">—</span> en esta zona</span>
+      <span class="vp-hint" style="font-size:10px;">Máx. 50 · zoom para actualizar</span>
+    </div>
+  </div>
+  <!-- ACTIONS PANEL (40%) -->
+  <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;">
+    <div style="padding:12px 16px;border-bottom:1px solid var(--gray-100);display:flex;align-items:center;gap:8px;background:var(--gray-50);">
+      <span style="font-size:11px;font-weight:800;font-family:'Montserrat',sans-serif;color:var(--dark);letter-spacing:.3px;">⚡ Acciones pendientes</span>
+      <span style="font-size:10px;font-weight:700;color:var(--gray-400);font-family:'Montserrat',sans-serif;margin-left:auto;" id="pending-count"></span>
+    </div>
+    <div id="pending-list" style="padding:10px;flex:1;"></div>
+  </div>
+</div>
+
+<!-- ── MERGE DIALOG ── -->
+<div class="merge-overlay" id="mergeOverlay">
+  <div class="merge-box">
+    <div class="merge-head">
+      <h3>📥 Importar CSV — Revisión de cambios</h3>
+      <p id="merge-subtitle">Analizando diferencias entre el fichero y los datos actuales…</p>
+    </div>
+    <div class="merge-body">
+      <div class="merge-stats">
+        <div class="mstat new"><div class="mv" id="mg-new">0</div><div class="ml">Nuevos</div></div>
+        <div class="mstat warn"><div class="mv" id="mg-mod">0</div><div class="ml">Modificados</div></div>
+        <div class="mstat"><div class="mv" id="mg-same">0</div><div class="ml">Sin cambios</div></div>
+      </div>
+      <div class="merge-preview" id="merge-preview">
+        <div class="merge-preview-title">Vista previa de cambios</div>
+        <div id="merge-preview-rows"></div>
+      </div>
+      <div class="merge-options">
+        <label class="merge-opt selected" onclick="selectMergeOpt(this,'fill')">
+          <input type="radio" name="merge-mode" value="fill" checked>
+          <div><div class="merge-opt-title">Completar campos vacíos</div>
+          <div class="merge-opt-desc">Los registros existentes mantienen sus datos. Solo se rellenan campos que estaban vacíos. Los registros nuevos se añaden completos.</div></div>
+        </label>
+        <label class="merge-opt" onclick="selectMergeOpt(this,'overwrite')">
+          <input type="radio" name="merge-mode" value="overwrite">
+          <div><div class="merge-opt-title">Sobrescribir con el CSV</div>
+          <div class="merge-opt-desc">Los datos del CSV nuevo prevalecen sobre los locales para todos los campos. Se mantienen los registros locales que no están en el CSV.</div></div>
+        </label>
+        <label class="merge-opt" onclick="selectMergeOpt(this,'replace')">
+          <input type="radio" name="merge-mode" value="replace">
+          <div><div class="merge-opt-title">Reemplazar todo</div>
+          <div class="merge-opt-desc">Sustituye completamente la base de datos con el CSV cargado. Se pierden los cambios locales no exportados previamente.</div></div>
+        </label>
+      </div>
+    </div>
+    <div class="merge-foot">
+      <button class="btn btn-outline" onclick="document.getElementById('mergeOverlay').classList.remove('open')">Cancelar</button>
+      <button class="btn btn-dark" style="margin-left:auto" onclick="applyMerge()">Aplicar importación</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ── PROGRESS OVERLAY ── -->
+<div class="progress-overlay" id="progressOverlay">
+  <div class="progress-box">
+    <div class="progress-icon">⏳</div>
+    <div class="progress-title" id="progress-title">Cargando base de datos</div>
+    <div class="progress-sub" id="progress-sub">Procesando registros…</div>
+    <div class="progress-pct" id="progress-pct">0%</div>
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progress-bar"></div></div>
+    <div class="progress-detail" id="progress-detail">Iniciando…</div>
+  </div>
+</div>
+
+<!-- ── GOOGLE MAPS IMPORT DIALOG ── -->
+<div class="merge-overlay" id="gmapsOverlay">
+  <div class="merge-box" style="width:560px">
+    <div class="merge-head">
+      <h3>📍 Importar desde Google Maps</h3>
+      <p>Pega la URL de Google Maps del taller para importar sus datos automáticamente</p>
+    </div>
+    <div class="merge-body">
+      <div class="gmaps-section">
+        <div style="font-size:10px;font-weight:700;font-family:'Montserrat',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:var(--gray-400);margin-bottom:6px;">URL de Google Maps</div>
+        <div class="gmaps-input-wrap">
+          <input class="gmaps-input" type="text" id="gmaps-url-input" placeholder="https://www.google.com/maps/place/...">
+          <button class="btn btn-teal" onclick="parseGMapsURL()">Analizar</button>
+        </div>
+        <div class="gmaps-error" id="gmaps-error">No se ha podido extraer información de esta URL. Comprueba que es una URL de lugar de Google Maps.</div>
+        <div class="gmaps-result" id="gmaps-result">
+          <div class="gmaps-result-title" id="gmaps-res-title"></div>
+          <div class="gmaps-result-grid">
+            <div class="gmaps-result-field"><label>Latitud</label><span id="gmaps-res-lat"></span></div>
+            <div class="gmaps-result-field"><label>Longitud</label><span id="gmaps-res-lng"></span></div>
+            <div class="gmaps-result-field" style="grid-column:1/-1"><label>Dirección (Nominatim)</label><span id="gmaps-res-addr">Consultando…</span></div>
+            <div class="gmaps-result-field"><label>Municipio</label><span id="gmaps-res-mun"></span></div>
+            <div class="gmaps-result-field"><label>Provincia</label><span id="gmaps-res-prov"></span></div>
+            <div class="gmaps-result-field"><label>CP</label><span id="gmaps-res-cp"></span></div>
+            <div class="gmaps-result-field"><label>País</label><span id="gmaps-res-pais"></span></div>
+          </div>
+        </div>
+      </div>
+      <div id="gmaps-match-section" style="display:none;margin-bottom:12px;">
+        <div style="font-size:10px;font-weight:700;font-family:'Montserrat',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:var(--amber);margin-bottom:6px;">⚠️ Taller ya existe en la base de datos</div>
+        <div style="background:var(--amber-bg);border-radius:var(--r);padding:10px 12px;font-size:12px;color:var(--amber);font-weight:600;" id="gmaps-match-info"></div>
+        <div style="margin-top:8px;display:flex;gap:6px;">
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;cursor:pointer;">
+            <input type="radio" name="gmaps-mode" value="fill" checked> Completar campos vacíos
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;cursor:pointer;">
+            <input type="radio" name="gmaps-mode" value="overwrite"> Sobrescribir todo
+          </label>
+        </div>
+      </div>
+    </div>
+    <div class="merge-foot">
+      <button class="btn btn-outline" onclick="document.getElementById('gmapsOverlay').classList.remove('open');document.getElementById('gmaps-url-input').value='';">Cancelar</button>
+      <button class="btn btn-dark" id="gmaps-apply-btn" style="margin-left:auto;display:none" onclick="applyGMapsImport()">Añadir / Actualizar taller</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- /shell -->
+
+<!-- ── MODAL ── -->
+<div class="overlay" id="overlay" onclick="closeOverlay(event)">
+<div class="modal" id="modal">
+  <div class="mhead">
+    <div class="mhead-id" id="m-id">NUEVO TALLER</div>
+    <h2 id="m-nombre">Ficha de taller</h2>
+    <div class="mhead-sub" id="m-sub"></div>
+    <button class="mclose" onclick="document.getElementById('overlay').classList.remove('open')">✕</button>
+  </div>
+  <div class="mode-bar" id="mode-bar">
+    <span class="mode-pill view" id="mode-pill">👁 Visualización</span>
+    <span class="mode-hint" id="mode-hint">Solo lectura · Pulsa Editar para modificar</span>
+    <span style="margin-left:auto;display:flex;gap:6px;" id="mode-bar-btns">
+      <button class="btn btn-outline" id="btn-enrich" onclick="enrichTaller(editingId)" title="Buscar información de este taller en internet (Nominatim + OpenStreetMap)">🔍 Buscar info</button>
+      <button class="btn btn-outline" id="btn-edit-mode" onclick="enterEditMode()">✏️ Editar</button>
+      <a id="btn-maps-bar" href="#" target="_blank" class="btn btn-teal" style="display:none">📍 Maps</a>
+    </span>
+  </div>
+  <div class="mtabs">
+    <div class="mtab active" onclick="switchTab('info')">📋 Información</div>
+    <div class="mtab" onclick="switchTab('contacto')">📞 Contacto</div>
+    <div class="mtab" onclick="switchTab('operativa')">⚙️ Operativa</div>
+    <div class="mtab" onclick="switchTab('mobius')">🤝 Mobius</div>
+    <div class="mtab" onclick="switchTab('precios')">💰 Precios</div>
+    <div class="mtab" onclick="switchTab('seguimiento')">💬 Seguimiento</div>
+  </div>
+  <div class="mbody">
+    <div class="dup-warn" id="dup-warn">⚠️ <span id="dup-msg"></span></div>
+
+    <!-- TAB: INFO -->
+    <div class="tab-panel active" id="tab-info">
+      <div class="form-sec">
+        <div class="form-sec-title">Identificación</div>
+        <div class="form-grid-3">
+          <div class="ff"><label>ID (auto)</label><input type="text" id="f-id" readonly placeholder="Auto-generado"></div>
+          <div class="ff"><label>País *</label>
+            <select id="f-pais">
+              <option value="">Seleccionar…</option>
+              <option>Portugal</option><option>España</option><option>Francia</option>
+            </select>
+          </div>
+          <div class="ff"><label>CIF / NIF</label><input type="text" id="f-cif" placeholder="Ej: PT123456789" oninput="checkDuplicate()"></div>
+        </div>
+        <div class="form-grid" style="margin-top:10px">
+          <div class="ff"><label>Nombre del taller *</label><input type="text" id="f-nombre" placeholder="Nombre oficial" oninput="checkDuplicate()"></div>
+          <div class="ff"><label>Razón social</label><input type="text" id="f-razon" placeholder="Denominación legal completa"></div>
+        </div>
+        <div class="form-grid" style="margin-top:10px">
+          <div class="ff" style="grid-column:1/-1"><label>Cadena / Grupo</label><input type="text" id="f-cadena" placeholder="Ej: Bosch Car Service, Independiente…"></div>
+        </div>
+      </div>
+      <div class="form-sec">
+        <div class="form-sec-title">Dirección</div>
+        <div class="form-grid-1"><div class="ff"><label>Dirección *</label><input type="text" id="f-dir" placeholder="Calle, número, piso…"></div></div>
+        <div class="form-grid-3" style="margin-top:10px">
+          <div class="ff"><label>Provincia / Departamento</label><input type="text" id="f-prov" placeholder="Ej: Lisboa, Hérault…"></div>
+          <div class="ff"><label>Distrito / Región</label><input type="text" id="f-dist" placeholder="Ej: Lisboa, Occitanie…"></div>
+          <div class="ff"><label>Municipio</label><input type="text" id="f-mun" placeholder="Ej: Lisboa, Faro…"></div>
+        </div>
+        <div class="form-grid-3" style="margin-top:10px">
+          <div class="ff"><label>Código Postal *</label><input type="text" id="f-cp" placeholder="Ej: 1000-001" oninput="checkDuplicate()"></div>
+          <div class="ff"><label>Latitud</label><input type="text" id="f-lat" placeholder="Ej: 38.7169"></div>
+          <div class="ff"><label>Longitud</label><input type="text" id="f-lng" placeholder="Ej: -9.1399"></div>
+        </div>
+      </div>
+      <div class="form-sec">
+        <div class="form-sec-title">Especialidades</div>
+        <div class="tipos-grid" style="grid-template-columns:repeat(3,1fr)">
+          <label class="tipo-cb" id="cb-Carroceria"><input type="checkbox" id="chk-Carroceria" onchange="updateTipoCb(this)"> 🚗 Carrocería</label>
+          <label class="tipo-cb" id="cb-Pintura"><input type="checkbox" id="chk-Pintura" onchange="updateTipoCb(this)"> 🎨 Pintura</label>
+          <label class="tipo-cb" id="cb-Mec_Ligera"><input type="checkbox" id="chk-Mec_Ligera" onchange="updateTipoCb(this)"> ⚙️ Mec. Ligera</label>
+          <label class="tipo-cb" id="cb-Mec_Pesada"><input type="checkbox" id="chk-Mec_Pesada" onchange="updateTipoCb(this)"> 🚛 Mec. Pesada</label>
+          <label class="tipo-cb" id="cb-Neumaticos"><input type="checkbox" id="chk-Neumaticos" onchange="updateTipoCb(this)"> ⭕ Neumáticos</label>
+          <label class="tipo-cb" id="cb-Lunas"><input type="checkbox" id="chk-Lunas" onchange="updateTipoCb(this)"> 🔍 Lunas</label>
+          <label class="tipo-cb" id="cb-Electrico"><input type="checkbox" id="chk-Electrico" onchange="updateTipoCb(this)"> ⚡ Eléctrico</label>
+          <label class="tipo-cb" id="cb-ADAS"><input type="checkbox" id="chk-ADAS" onchange="updateTipoCb(this)"> 📡 ADAS</label>
+          <label class="tipo-cb" id="cb-Otros"><input type="checkbox" id="chk-Otros" onchange="updateTipoCb(this)"> ➕ Otros</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: CONTACTO -->
+    <div class="tab-panel" id="tab-contacto">
+      <div class="form-sec">
+        <div class="form-sec-title">Datos de contacto</div>
+        <div class="form-grid">
+          <div class="ff">
+            <label>Teléfono fijo</label>
+            <div class="contact-field-wrap">
+              <input type="tel" id="f-tel-fijo" placeholder="Ej: +34 91 000 0000">
+              <a class="contact-btn" id="btn-call" href="#" onclick="contactAction('call')" title="Llamar">📞</a>
+              <a class="contact-btn" id="btn-sms" href="#" onclick="contactAction('sms')" title="SMS">💬</a>
+            </div>
+          </div>
+          <div class="ff">
+            <label>Teléfono móvil</label>
+            <div class="contact-field-wrap">
+              <input type="tel" id="f-tel-mov" placeholder="Ej: +34 6XX XXX XXX">
+              <a class="contact-btn" id="btn-call-mov" href="#" onclick="contactAction('callmov')" title="Llamar móvil">📞</a>
+            </div>
+          </div>
+          <div class="ff">
+            <label>WhatsApp</label>
+            <div class="contact-field-wrap">
+              <input type="tel" id="f-whatsapp" placeholder="Ej: +34 6XX XXX XXX">
+              <a class="contact-btn" id="btn-wa" href="#" onclick="contactAction('whatsapp')" title="Abrir WhatsApp">🟢</a>
+            </div>
+          </div>
+          <div class="ff">
+            <label>Email</label>
+            <div class="contact-field-wrap">
+              <input type="email" id="f-email" placeholder="contacto@taller.com">
+              <a class="contact-btn" id="btn-email" href="#" onclick="contactAction('email')" title="Enviar email">✉️</a>
+            </div>
+          </div>
+          <div class="ff" style="grid-column:1/-1">
+            <label>Web</label>
+            <div class="contact-field-wrap">
+              <input type="url" id="f-web" placeholder="https://www.taller.com">
+              <a class="contact-btn" id="btn-web" href="#" onclick="contactAction('web')" title="Abrir web">🌐</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="form-sec">
+        <div class="form-sec-title">Responsable de contacto</div>
+        <div class="form-grid">
+          <div class="ff"><label>Nombre</label><input type="text" id="f-resp-nombre" placeholder="Nombre completo"></div>
+          <div class="ff"><label>Cargo</label><input type="text" id="f-resp-cargo" placeholder="Ej: Gerente, Jefe de taller…"></div>
+        </div>
+        <div class="form-grid" style="margin-top:10px">
+          <div class="ff">
+            <label>Último contacto</label>
+            <input type="datetime-local" id="f-ultimo-contacto">
+          </div>
+          <div class="ff" style="display:flex;align-items:flex-end;gap:8px;padding-bottom:2px">
+            <button class="btn btn-outline" style="font-size:11px" onclick="setUltimoContactoNow()">📅 Marcar ahora</button>
+            <span id="ultimo-contacto-label" style="font-size:11px;color:var(--gray-400);font-family:'Montserrat',sans-serif;font-weight:600"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: OPERATIVA -->
+    <div class="tab-panel" id="tab-operativa">
+      <div class="form-sec">
+        <div class="form-sec-title">Capacidad y horario</div>
+        <div class="form-grid">
+          <div class="ff"><label>Capacidad diaria (vehículos)</label><input type="number" id="f-capacidad" placeholder="Ej: 5" min="0"></div>
+          <div class="ff"><label>Horario</label><input type="text" id="f-horario" placeholder="Ej: Lun-Vie 8-18h"></div>
+          <div class="ff"><label>Idiomas</label><input type="text" id="f-idiomas" placeholder="Ej: PT;ES;EN (separados por ;)"></div>
+          <div class="ff"><label>Rating (0-5)</label><input type="number" id="f-rating" placeholder="Ej: 4.5" min="0" max="5" step="0.1"></div>
+        </div>
+      </div>
+      <div class="form-sec">
+        <div class="form-sec-title">Notas operativas</div>
+        <div class="form-grid-1"><div class="ff"><textarea id="f-notas" placeholder="Observaciones, condiciones especiales, acuerdos previos…" style="min-height:80px"></textarea></div></div>
+      </div>
+    </div>
+
+
+    <!-- TAB: PRECIOS Y CONDICIONES -->
+    <div class="tab-panel" id="tab-precios">
+      <div class="form-sec">
+        <div class="form-sec-title">Tarifas de mano de obra</div>
+        <div class="form-grid">
+          <div class="ff"><label>M.O. General (€/hora)</label><input type="number" id="f-mo-hora" placeholder="Ej: 55" min="0" step="0.5"></div>
+          <div class="ff"><label>Tarifa diagnóstico (€)</label><input type="number" id="f-tarifa-diag" placeholder="Ej: 40" min="0" step="0.5"></div>
+          <div class="ff"><label>Descuento Mobius (%)</label><input type="number" id="f-descuento" placeholder="Ej: 10" min="0" max="100" step="0.5"></div>
+          <div class="ff"><label>Plazo de entrega habitual</label><input type="text" id="f-plazo" placeholder="Ej: 24-48h, 3-5 días…"></div>
+        </div>
+      </div>
+      <div class="form-sec">
+        <div class="form-sec-title">Condiciones comerciales</div>
+        <div class="form-grid">
+          <div class="ff"><label>Condiciones de pago</label><input type="text" id="f-condiciones" placeholder="Ej: 30 días, contado, transferencia…"></div>
+          <div class="ff"><label>Garantía de trabajos</label><input type="text" id="f-garantia" placeholder="Ej: 12 meses, 2 años…"></div>
+        </div>
+        <div class="form-grid-1" style="margin-top:10px">
+          <div class="ff"><label>Notas sobre precios / acuerdos especiales</label>
+            <textarea id="f-notas-precios" placeholder="Condiciones negociadas, tarifas especiales Mobius, acuerdos marco…" style="min-height:80px"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: MOBIUS -->
+    <div class="tab-panel" id="tab-mobius">
+      <div class="form-sec">
+        <div class="form-sec-title">Estado en Mobius</div>
+        <div class="estado-opts" id="estado-opts">
+          <div class="estado-opt" data-v="Identificado" onclick="selEstadoForm(this)">🔍 Identificado</div>
+          <div class="estado-opt" data-v="Contactado" onclick="selEstadoForm(this)">📞 Contactado</div>
+          <div class="estado-opt" data-v="En negociación" onclick="selEstadoForm(this)">🤝 En negociación</div>
+          <div class="estado-opt" data-v="Homologación" onclick="selEstadoForm(this)">📋 Homologación</div>
+          <div class="estado-opt" data-v="Homologado" onclick="selEstadoForm(this)">✅ Homologado</div>
+        </div>
+        <input type="hidden" id="f-estado" value="Identificado">
+      </div>
+      <div class="form-sec" style="margin-top:10px">
+        <div class="form-sec-title">Registro</div>
+        <div class="form-grid">
+          <div class="ff"><label>Fecha de alta</label><input type="date" id="f-fecha"></div>
+          <div class="ff"><label>ID interno</label><input type="text" id="f-id-display" readonly></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+    <!-- TAB: SEGUIMIENTO -->
+    <div class="tab-panel" id="tab-seguimiento">
+      <div class="form-sec" id="seg-form-wrap">
+        <div class="form-sec-title">Añadir comentario</div>
+        <div class="form-grid">
+          <div class="ff"><label>Tu nombre *</label><input type="text" id="f-seg-autor" placeholder="Ej: Carlos Coira" style="max-width:240px"></div>
+        </div>
+        <div class="form-grid-1" style="margin-top:8px">
+          <div class="ff">
+            <label>Comentario *</label>
+            <textarea id="f-seg-texto" placeholder="Describe el contacto, acuerdo, visita, incidencia o cualquier novedad relevante sobre este taller…" style="min-height:75px"></textarea>
+          </div>
+        </div>
+        <div style="margin-top:8px">
+          <button class="btn btn-teal" onclick="addComment()">💬 Añadir comentario</button>
+        </div>
+      </div>
+      <div class="form-sec" style="margin-top:4px">
+        <div class="form-sec-title">Historial cronológico</div>
+        <div id="seg-history" style="min-height:60px"></div>
+      </div>
+    </div>
+
+  <div class="mactions" id="mactions">
+    <!-- VIEW MODE actions -->
+    <div id="actions-view" style="display:flex;gap:8px;width:100%;align-items:center;">
+      <button class="btn btn-red" id="btn-delete-view" onclick="deleteTaller()" style="display:none;margin-right:auto">🗑 Eliminar</button>
+      <button class="btn btn-outline" onclick="document.getElementById('overlay').classList.remove('open')">Cerrar</button>
+    </div>
+    <!-- EDIT MODE actions -->
+    <div id="actions-edit" style="display:none;gap:8px;width:100%;align-items:center;">
+      <button class="btn btn-red" id="btn-delete-edit" onclick="deleteTaller()" style="display:none;margin-right:auto">🗑 Eliminar</button>
+      <button class="btn btn-outline" onclick="cancelEdit()">✕ Cancelar</button>
+      <button class="btn btn-dark" onclick="saveTaller()">💾 Guardar cambios</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── STATE ──
+let DATA=[], activeTipo='todos', activeEstado='', selectedId=null, editingId=null, pendingChanges=0, isEditMode=false;
+const SETTINGS_KEY='mobius_settings_v1';
+let APP_SETTINGS={openai_api_key:'',openai_model:'gpt-4o-mini',use_ai:false,gh_token:'',gh_owner:'',gh_repo:'',gh_path:'talleres_mobius.csv',gh_author:''};
+const PAGE_SIZE=100; let currentPage=1, _filteredData=[];
+let clusterGroup=null, allGeoData=[], MAP_LIMIT=50;
+let map, markersLayer, markerMap={};
+const FLAGS={Portugal:'🇵🇹',España:'🇪🇸',Francia:'🇫🇷'};
+const TICO={Carroceria:'🚗',Pintura:'🎨',Mec_Ligera:'⚙️',Mec_Pesada:'🚛',Neumaticos:'⭕',Lunas:'🔍',Electrico:'⚡',ADAS:'📡',Otros:'➕'};
+const TILBL={Carroceria:'Carrocería',Pintura:'Pintura',Mec_Ligera:'Mec. Ligera',Mec_Pesada:'Mec. Pesada',Neumaticos:'Neumáticos',Lunas:'Lunas',Electrico:'Eléctrico',ADAS:'ADAS',Otros:'Otros'};
+const ECOL={Identificado:'#60A5FA',Contactado:'#FBBF24','En negociación':'#F472B6',Homologación:'#8B5CF6',Homologado:'#4ADE80'};
+const COLS=['ID','Pais','Nombre','Cadena','CIF_NIF','Razon_Social','Carroceria','Pintura','Mec_Ligera','Mec_Pesada','Neumaticos','Lunas','Electrico','ADAS','Otros',
+  'Direccion','Distrito','Provincia','Municipio','CP','Telefono_Fijo','Telefono_Movil','Whatsapp','Email','Web',
+  'Lat','Lng','Rating','Capacidad_Diaria','Horario','Idiomas','Estado_Mobius','Responsable_Nombre','Responsable_Cargo','Fecha_Alta','Notas','MO_Hora','Tarifa_Diagnostico','Descuento_Mobius','Condiciones_Pago','Garantia','Plazo_Entrega','Notas_Precios','Comentarios','Fecha_Ultimo_Contacto','Coords_OK'];
+
+// ── STORAGE ──
+const STORAGE_KEY='mobius_talleres_v4';
+function saveToStorage(){
+  if(!DATA.length) return;
+  try{
+    // CSV is 3-4x more compact than JSON — much less likely to hit the 5MB limit
+    const csvText=Papa.unparse(DATA,{columns:COLS,newline:'\n'});
+    localStorage.setItem(STORAGE_KEY, csvText);
+    localStorage.setItem(STORAGE_KEY+'_meta',JSON.stringify({saved:new Date().toISOString(),count:DATA.length}));
+    // Update status bar
+    const csvNameEl=document.getElementById('csv-name');
+    if(csvNameEl&&csvNameEl.textContent.includes('guardados')){
+      const now=new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+      csvNameEl.textContent='Datos guardados localmente · '+DATA.length+' registros · '+now;
+    }
+  }catch(e){
+    console.warn('localStorage save failed:',e);
+    showToast('⚠ Datos demasiado grandes para localStorage. Exporta el CSV para no perder cambios.','error');
+  }
+}
+function saveToStorageAsync(){
+  // Deferred version for bulk imports (avoids blocking UI)
+  setTimeout(()=>saveToStorage(),0);
+}
+function loadFromStorage(){
+  try{
+    const stored=localStorage.getItem(STORAGE_KEY);
+    if(!stored) return null;
+    // CSV format (new) — starts with header row
+    if(stored.startsWith('ID,') || stored.startsWith('"ID"')){
+      const result=Papa.parse(stored,{header:true,skipEmptyLines:true});
+      return result.data&&result.data.length>0?result.data:null;
+    }
+    // JSON format (old) — fallback
+    if(stored.startsWith('[') || stored.startsWith('{')){
+      const data=JSON.parse(stored);
+      return Array.isArray(data)&&data.length>0?data:null;
+    }
+    return null;
+  }catch(e){ return null; }
+}
+
+// ── MAP ──
+function initMap(){
+  map=L.map('map').setView([40.0,-4.0],6);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{attribution:'© OpenStreetMap © CARTO',maxZoom:19}).addTo(map);
+  markersLayer=L.layerGroup().addTo(map); // kept for compatibility
+  clusterGroup=L.markerClusterGroup({
+    maxClusterRadius:40,
+    showCoverageOnHover:false,
+    zoomToBoundsOnClick:true,
+    chunkedLoading:true,
+    chunkInterval:30,
+    disableClusteringAtZoom:13,
+    iconCreateFunction:function(cluster){
+      const c=cluster.getChildCount();
+      const sz=c<10?'small':c<100?'medium':'large';
+      const color=c<10?'#3DBFBF':c<100?'#2D3142':'#B91C1C';
+      return L.divIcon({
+        html:`<div style="background:${color};color:white;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-family:Montserrat,sans-serif;font-weight:800;font-size:11px;border:2.5px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.25)">${c}</div>`,
+        className:'',iconSize:[36,36],iconAnchor:[18,18]
+      });
+    }
+  }).addTo(map);
+  map.on('moveend zoomend',function(){refreshViewportMarkers();});
+}
+
+function refreshViewportMarkers(){
+  if(!allGeoData.length) return;
+  const bounds=map.getBounds().pad(0.1); // 10% padding outside visible area
+  // Filter to current filtered dataset that has coords and is in viewport
+  const inView=allGeoData.filter(t=>{
+    const lat=parseFloat(t.Lat),lng=parseFloat(t.Lng);
+    if(!lat||!lng||isNaN(lat)||isNaN(lng)) return false;
+    return bounds.contains([lat,lng]);
+  });
+  // Take first MAP_LIMIT sorted by distance to map center
+  const center=map.getCenter();
+  inView.sort((a,b)=>{
+    const da=Math.abs(parseFloat(a.Lat)-center.lat)+Math.abs(parseFloat(a.Lng)-center.lng);
+    const db=Math.abs(parseFloat(b.Lat)-center.lat)+Math.abs(parseFloat(b.Lng)-center.lng);
+    return da-db;
+  });
+  const toShow=inView.slice(0,MAP_LIMIT);
+  // Rebuild cluster
+  clusterGroup.clearLayers();
+  markerMap={};
+  toShow.forEach(t=>{
+    const m=buildMarker(t);
+    if(m){clusterGroup.addLayer(m);markerMap[t.ID]=m;}
+  });
+  // Update info bar
+  const vpEl=document.getElementById('vp-count');
+  const vtEl=document.getElementById('vp-total');
+  if(vpEl) vpEl.textContent=toShow.length;
+  if(vtEl) vtEl.textContent=allGeoData.length;
+  // Async precise geocoding for shown markers (non-blocking)
+  setTimeout(()=>geocodeViewportAsync(toShow),500);
+}
+// ── GEOCODING CACHE (session) ──
+const geoCache={};
+let geoQueue=[], geoRunning=false;
+
+function geoQueryFor(t){
+  return [t.Nombre,t.Direccion,t.CP,t.Municipio,t.Pais].filter(Boolean).join(', ');
+}
+
+async function geocodeAddress(query){
+  if(geoCache[query]) return geoCache[query];
+  try{
+    const url='https://nominatim.openstreetmap.org/search?format=json&limit=1&q='+encodeURIComponent(query);
+    const r=await fetch(url,{headers:{'User-Agent':'MobiusNetworkApp/1.0'}});
+    const d=await r.json();
+    if(d&&d.length){
+      const result={lat:parseFloat(d[0].lat),lng:parseFloat(d[0].lon)};
+      geoCache[query]=result;
+      return result;
+    }
+  }catch(e){}
+  return null;
+}
+
+function placeMarkerAt(t,lat,lng){
+  const col=ECOL[t.Estado_Mobius]||'#9BA3B2';
+  const icon=L.divIcon({
+    html:`<div style="width:13px;height:13px;border-radius:50%;background:${col};border:2.5px solid white;box-shadow:0 1px 5px rgba(0,0,0,.3);cursor:pointer"></div>`,
+    className:'',iconSize:[13,13],iconAnchor:[6,6]
+  });
+  const m=L.marker([lat,lng],{icon});
+  m.bindPopup(`<div style="font-family:Montserrat,sans-serif;min-width:160px">
+    <div style="font-size:12px;font-weight:800;color:#2D3142;margin-bottom:2px">${t.Nombre}</div>
+    <div style="font-size:11px;color:#7B8499;margin-bottom:6px">${[t.Municipio,t.Pais].filter(Boolean).join(', ')}</div>
+    <span style="font-size:10px;font-weight:700;background:${col}22;color:${col==='#FBBF24'?'#92400E':col};padding:2px 8px;border-radius:8px">${t.Estado_Mobius}</span>
+  </div>`,{maxWidth:220,closeButton:false});
+  m.on('click',()=>{selectCard(t.ID,false);openModal(t.ID);});
+  return m;
+}
+
+function buildMarker(t){
+  // Use stored coords if available (province-level or previously geocoded)
+  const lat=parseFloat(t.Lat),lng=parseFloat(t.Lng);
+  if(lat&&lng&&!isNaN(lat)&&!isNaN(lng)){
+    const q=geoQueryFor(t);
+    // If we have a precise geocode cached, use it instead
+    if(geoCache[q]){
+      const c=geoCache[q];
+      // Update stored coords silently
+      const idx=DATA.findIndex(x=>x.ID===t.ID);
+      if(idx>=0){DATA[idx].Lat=String(c.lat);DATA[idx].Lng=String(c.lng);}
+      return placeMarkerAt(t,c.lat,c.lng);
+    }
+    return placeMarkerAt(t,lat,lng);
+  }
+  return null; // Will be geocoded async in refreshViewportMarkers
+}
+
+// Queue precise geocoding for markers shown in viewport
+async function geocodeViewportAsync(talleres){
+  // Only geocode up to 5 at a time to avoid rate-limit
+  const toGeo=talleres.filter(t=>{
+    const q=geoQueryFor(t);
+    return !geoCache[q];
+  }).slice(0,5);
+  
+  for(const t of toGeo){
+    const q=geoQueryFor(t);
+    const result=await geocodeAddress(q);
+    if(result){
+      // Update DATA
+      const idx=DATA.findIndex(x=>x.ID===t.ID);
+      if(idx>=0){DATA[idx].Lat=String(result.lat);DATA[idx].Lng=String(result.lng);}
+      // Add marker if in viewport and not already shown
+      if(!markerMap[t.ID]&&map.getBounds().pad(0.1).contains([result.lat,result.lng])){
+        const m=placeMarkerAt(t,result.lat,result.lng);
+        clusterGroup.addLayer(m);
+        markerMap[t.ID]=m;
+      } else if(markerMap[t.ID]){
+        // Reposition existing marker
+        markerMap[t.ID].setLatLng([result.lat,result.lng]);
+      }
+    }
+    await new Promise(r=>setTimeout(r,1100)); // Nominatim 1/s
+  }
+}
+
+function updateMap(data){
+  // Store geo-enabled subset for viewport rendering
+  allGeoData=data.filter(t=>{
+    const lat=parseFloat(t.Lat),lng=parseFloat(t.Lng);
+    return lat&&lng&&!isNaN(lat)&&!isNaN(lng);
+  });
+
+  if(!allGeoData.length){
+    clusterGroup.clearLayers();markerMap={};
+    const vpEl=document.getElementById('vp-count');
+    const vtEl=document.getElementById('vp-total');
+    if(vpEl) vpEl.textContent=0;
+    if(vtEl) vtEl.textContent=0;
+    return;
+  }
+
+  // Auto-fit: only if user hasn't zoomed in AND dataset is manageable
+  // Instead of passing all coords to fitBounds (slow), compute min/max manually
+  if(map.getZoom()<11){
+    let minLat=90,maxLat=-90,minLng=180,maxLng=-180;
+    // Sample up to 500 points for bounding box (sufficient accuracy, much faster)
+    const sample=allGeoData.length>500
+      ? allGeoData.filter((_,i)=>i%Math.ceil(allGeoData.length/500)===0)
+      : allGeoData;
+    sample.forEach(t=>{
+      const lat=parseFloat(t.Lat),lng=parseFloat(t.Lng);
+      if(lat<minLat)minLat=lat; if(lat>maxLat)maxLat=lat;
+      if(lng<minLng)minLng=lng; if(lng>maxLng)maxLng=lng;
+    });
+    if(allGeoData.length===1){
+      map.setView([minLat,minLng],12);
+    } else {
+      map.fitBounds([[minLat,minLng],[maxLat,maxLng]],{padding:[30,30],maxZoom:9});
+    }
+  }
+
+  // Defer viewport refresh so fitBounds settles first
+  setTimeout(()=>refreshViewportMarkers(),300);
+}
+
+// ── CSV LOAD ──
+const CSV_FILE='talleres_mobius.csv';
+function mergeWithStorage(incoming){
+  const stored=loadFromStorage();
+  if(!stored||stored.length===0)return incoming;
+  // Merge: stored tiene prioridad (tiene ediciones locales)
+  const storedMap=Object.fromEntries(stored.map(t=>[t.ID,t]));
+  const inMap=Object.fromEntries(incoming.map(t=>[t.ID,t]));
+  // nuevos en incoming que no están en stored → añadir
+  incoming.forEach(t=>{if(!storedMap[t.ID])stored.push(t);});
+  return stored;
+}
+function loadCSV(text,label,merge=true){
+  const r=Papa.parse(text,{header:true,skipEmptyLines:true,encoding:'UTF-8'});
+  const incoming=r.data.map(t=>({...t}));
+  DATA=merge?mergeWithStorage(incoming):incoming;
+  document.getElementById('csv-dot').className='csv-dot';
+  document.getElementById('csv-name').textContent=(label||CSV_FILE)+' · '+DATA.length+' registros';
+  pendingChanges=0;
+  populateSelects();renderAll();updateStats();updateSbCounts();
+  showToast('Datos cargados correctamente','success');
+}
+// ── MERGE LOGIC ──
+let _pendingCSVText='', _pendingCSVLabel='';
+
+function loadFromFile(input){
+  const f=input.files[0];if(!f)return;
+  document.getElementById('csv-dot').className='csv-dot loading';
+  document.getElementById('csv-name').textContent='Analizando '+f.name+'…';
+  const r=new FileReader();
+  r.onload=e=>{
+    _pendingCSVText=e.target.result;
+    _pendingCSVLabel=f.name;
+    if(DATA.length===0){
+      // No existing data: load directly
+      applyLoadDirect(_pendingCSVText,_pendingCSVLabel);
+    } else {
+      openMergeDialog(_pendingCSVText,_pendingCSVLabel);
+    }
+  };
+  r.readAsText(f,'UTF-8');
+}
+
+function showProgress(title,sub){
+  document.getElementById('progress-title').textContent=title;
+  document.getElementById('progress-sub').textContent=sub;
+  setProgress(0,'Iniciando…');
+  document.getElementById('progressOverlay').classList.add('open');
+}
+function setProgress(pct,detail){
+  document.getElementById('progress-pct').textContent=Math.round(pct)+'%';
+  document.getElementById('progress-bar').style.width=pct+'%';
+  document.getElementById('progress-detail').textContent=detail;
+}
+function hideProgress(){document.getElementById('progressOverlay').classList.remove('open');}
+
+function applyLoadDirect(text,label){
+  showProgress('Cargando base de datos',label);
+  setProgress(10,'Parseando CSV…');
+  setTimeout(()=>{
+    const r=Papa.parse(text,{header:true,skipEmptyLines:true});
+    DATA=r.data;
+    setProgress(35,'Parseados '+DATA.length+' registros…');
+    setTimeout(()=>{
+      populateSelects();
+      setProgress(55,'Filtros actualizados…');
+      setTimeout(()=>{
+        document.getElementById('csv-dot').className='csv-dot';
+        document.getElementById('csv-name').textContent=label+' · '+DATA.length+' registros';
+        pendingChanges=0;
+        const d=getFiltered();
+        renderCards(d);
+        document.getElementById('res-cnt').textContent=d.length;
+        setProgress(75,'Tarjetas renderizadas…');
+        setTimeout(()=>{
+          setProgress(100,'Completado');
+          saveToStorageAsync();
+          setTimeout(()=>{
+            hideProgress();
+            showToast(DATA.length+' talleres cargados','success');
+            setTimeout(()=>updateStats(),   80);
+            setTimeout(()=>updateSbCounts(),140);
+            setTimeout(()=>updateChipCounts(),200);
+            setTimeout(()=>{ const df=getFiltered(); updateMap(df); },300);
+            setTimeout(()=>{ renderPending(getFiltered()); },900);
+          },200);
+        },60);
+      },60);
+    },60);
+  },80);
+}
+
+function openMergeDialog(text,label){
+  const incoming=Papa.parse(text,{header:true,skipEmptyLines:true}).data;
+  // Deduplicate key: CIF if present, else ID
+  const keyOf=t=>t.CIF_NIF&&t.CIF_NIF.trim()?t.CIF_NIF.trim():t.ID;
+  const currentMap=Object.fromEntries(DATA.map(t=>[keyOf(t),t]));
+  let nNew=0,nMod=0,nSame=0;
+  const preview=[];
+  incoming.forEach(t=>{
+    const k=keyOf(t);
+    const existing=currentMap[k];
+    if(!existing){
+      nNew++;
+      if(preview.length<12) preview.push({tipo:'new',nombre:t.Nombre,detalle:'Nuevo registro · '+t.Provincia});
+    } else {
+      // Check if any field differs
+      const changed=COLS.filter(c=>c!=='ID'&&(t[c]||'').trim()!==(existing[c]||'').trim()&&(t[c]||'').trim()!=='');
+      if(changed.length){
+        nMod++;
+        if(preview.length<12) preview.push({tipo:'mod',nombre:t.Nombre,detalle:changed.length+' campo(s) diferente(s): '+changed.slice(0,3).join(', ')});
+      } else {
+        nSame++;
+        if(preview.length<12&&nSame<=3) preview.push({tipo:'ok',nombre:t.Nombre,detalle:'Sin cambios'});
+      }
+    }
+  });
+  document.getElementById('mg-new').textContent=nNew;
+  document.getElementById('mg-mod').textContent=nMod;
+  document.getElementById('mg-same').textContent=nSame;
+  document.getElementById('merge-subtitle').textContent=
+    label+' · '+incoming.length+' registros en el fichero vs '+DATA.length+' en memoria';
+  const rows=document.getElementById('merge-preview-rows');
+  rows.innerHTML=preview.map(p=>`
+    <div class="merge-preview-row">
+      <span class="merge-badge mb-${p.tipo}">${p.tipo==='new'?'NUEVO':p.tipo==='mod'?'CAMBIOS':p.tipo==='dup'?'DUPL':'OK'}</span>
+      <span style="font-weight:600;flex:1">${p.nombre}</span>
+      <span style="color:var(--gray-400)">${p.detalle}</span>
+    </div>`).join('') + (nNew+nMod>12?`<div style="font-size:11px;color:var(--gray-400);padding:4px 0">…y ${nNew+nMod-12} más</div>`:'');
+  document.getElementById('mergeOverlay').classList.add('open');
+}
+
+function selectMergeOpt(el,val){
+  document.querySelectorAll('.merge-opt').forEach(o=>o.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function applyMerge(){
+  const mode=document.querySelector('.merge-opt.selected input').value;
+  const incoming=Papa.parse(_pendingCSVText,{header:true,skipEmptyLines:true}).data;
+  const keyOf=t=>t.CIF_NIF&&t.CIF_NIF.trim()?t.CIF_NIF.trim():t.ID;
+
+  if(mode==='replace'){
+    DATA=incoming;
+  clearScoreCache();
+  } else {
+    const currentMap=Object.fromEntries(DATA.map(t=>[keyOf(t),t]));
+    incoming.forEach(t=>{
+      const k=keyOf(t);
+      if(!currentMap[k]){
+        DATA.push(t); // Always add new records
+      } else if(mode==='overwrite'){
+        // CSV wins on all non-empty fields
+        COLS.forEach(c=>{ if((t[c]||'').trim()) currentMap[k][c]=t[c]; });
+      } else { // fill
+        // Only fill empty local fields
+        COLS.forEach(c=>{ if(!(currentMap[k][c]||'').trim()&&(t[c]||'').trim()) currentMap[k][c]=t[c]; });
+      }
+    });
+  }
+
+  document.getElementById('mergeOverlay').classList.remove('open');
+  showProgress('Aplicando importación','Modo: '+mode);
+  setProgress(30,'Procesando '+DATA.length+' registros…');
+  setTimeout(()=>{
+    setProgress(55,'Actualizando filtros…');
+    populateSelects();
+    setTimeout(()=>{
+      setProgress(70,'Renderizando primera página…');
+      pendingChanges=0;
+      document.getElementById('csv-dot').className='csv-dot';
+      document.getElementById('csv-name').textContent=_pendingCSVLabel+' · '+DATA.length+' registros';
+      setTimeout(()=>{
+        const d=getFiltered();
+        renderCards(d);
+        document.getElementById('res-cnt').textContent=d.length;
+        setProgress(100,'Completado');
+        saveToStorageAsync();
+        // Close overlay FIRST — then do heavy ops in separate ticks
+        setTimeout(()=>{
+          hideProgress();
+          showToast('Importación aplicada (modo: '+mode+') · '+DATA.length+' talleres','success');
+          setTimeout(()=>updateStats(),  80);
+          setTimeout(()=>updateSbCounts(), 140);
+          setTimeout(()=>updateChipCounts(), 200);
+          setTimeout(()=>updateMap(d),    300);
+          setTimeout(()=>renderPending(d), 900);
+        },200);
+      },60);
+    },60);
+  },100);
+}
+
+// ── RESTORE FROM LOCALSTORAGE ──
+function tryRestoreFromStorage(){
+  const stored=loadFromStorage();
+  if(stored&&stored.length){
+    DATA=stored;
+    clearScoreCache();
+    const meta=JSON.parse(localStorage.getItem(STORAGE_KEY+'_meta')||'{}');
+    const savedDate=meta.saved
+      ?new Date(meta.saved).toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})
+      :'—';
+    document.getElementById('csv-dot').className='csv-dot';
+    document.getElementById('csv-name').textContent='Datos guardados localmente · '+DATA.length+' registros · '+savedDate;
+    populateSelects();
+    const d=getFiltered();
+    renderCards(d);
+    document.getElementById('res-cnt').textContent=d.length;
+    setTimeout(()=>{ updateMap(d); updateStats(); updateSbCounts(); updateChipCounts(); renderPending(d); },400);
+    showToast('Base de datos cargada ('+DATA.length+' talleres)','info');
+  } else {
+    document.getElementById('csv-dot').className='csv-dot error';
+    document.getElementById('csv-name').textContent='Sin datos · Carga un fichero CSV';
+    loadFallback();
+  }
+}
+
+function reloadCSV(){
+  document.getElementById('csv-dot').className='csv-dot loading';
+
+  // Si es fichero local (file://), fetch se queda bloqueado — ir directo a localStorage
+  if(location.protocol==='file:'){
+    tryRestoreFromStorage();
+    return;
+  }
+
+  // Con servidor: intentar fetch con timeout de 3s
+  let settled=false;
+  const timer=setTimeout(()=>{ if(!settled){ settled=true; tryRestoreFromStorage(); }}, 3000);
+
+  fetch(CSV_FILE+'?v='+Date.now())
+    .then(r=>{ clearTimeout(timer); settled=true; if(!r.ok)throw new Error(); return r.text(); })
+    .then(t=>{ loadCSV(t,CSV_FILE,true); saveToStorage(); })
+    .catch(()=>{ clearTimeout(timer); if(!settled){ settled=true; tryRestoreFromStorage(); } });
+}
+
+// ── EXPORT CSV ──
+function exportCSV(){
+  if(!DATA.length){showToast('No hay datos para exportar','error');return;}
+  const rows=[COLS.join(',')];
+  DATA.forEach(t=>{
+    const row=COLS.map(c=>{
+      const v=(t[c]||'').toString();
+      return v.includes(',')||v.includes('"')||v.includes('\n')?'"'+v.replace(/"/g,'""')+'"':v;
+    });
+    rows.push(row.join(','));
+  });
+  const blob=new Blob(['\uFEFF'+rows.join('\n')],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='talleres_mobius.csv';a.click();
+  URL.revokeObjectURL(url);
+  pendingChanges=0;updateStats();
+  showToast('CSV exportado. Sustituye el fichero en SharePoint.','success');
+}
+
+// ── DEDUP CHECK ──
+// Returns similarity score 0-1 between two name strings
+function nameSimilarity(a,b){
+  if(!a||!b) return 0;
+  const clean=s=>s.toLowerCase().replace(/[|,.\-_]/g,' ').replace(/\s+/g,' ').trim();
+  const ca=clean(a), cb=clean(b);
+  const wa=ca.split(' ').filter(w=>w.length>2);
+  const wb=cb.split(' ').filter(w=>w.length>2);
+  if(!wa.length||!wb.length) return 0;
+  // If shorter name is fully contained in longer name → high similarity
+  const shorter=ca.length<cb.length?ca:cb;
+  const longer=ca.length<cb.length?cb:ca;
+  if(longer.includes(shorter)) return 0.9;
+  // Count words from shorter list found in longer list
+  const wShort=ca.length<cb.length?wa:wb;
+  const wLong=ca.length<cb.length?wb:wa;
+  const hits=wShort.filter(w=>wLong.some(x=>x.startsWith(w)||w.startsWith(x))).length;
+  return hits/Math.max(wa.length,wb.length);
+}
+
+function _dupCheck(t,d){
+  // 1. CIF match (strongest signal)
+  if(t.CIF_NIF&&d.CIF_NIF&&t.CIF_NIF.trim()&&d.CIF_NIF.trim()&&
+     t.CIF_NIF.trim().toUpperCase()===d.CIF_NIF.trim().toUpperCase()) return true;
+  // 2. Exact name + same CP
+  if(t.Nombre&&t.CP&&d.Nombre&&d.CP&&
+     t.Nombre.trim().toLowerCase()===d.Nombre.trim().toLowerCase()&&
+     t.CP.trim()===d.CP.trim()) return true;
+  // 3. Fuzzy name (≥0.65 similarity) + same CP
+  if(t.Nombre&&t.CP&&d.Nombre&&d.CP&&
+     nameSimilarity(t.Nombre,d.Nombre)>=0.65&&
+     t.CP.trim()===d.CP.trim()) return true;
+  // 4. Fuzzy name (≥0.65) + very close coords (<150m ≈ 0.0015°)
+  if(t.Nombre&&d.Nombre&&t.Lat&&t.Lng&&d.Lat&&d.Lng&&
+     nameSimilarity(t.Nombre,d.Nombre)>=0.65&&
+     Math.abs(parseFloat(t.Lat)-parseFloat(d.Lat))<0.0015&&
+     Math.abs(parseFloat(t.Lng)-parseFloat(d.Lng))<0.0015) return true;
+  return false;
+}
+
+function isDuplicate(t,excludeId=null){
+  return DATA.some(d=>d.ID!==excludeId&&_dupCheck(t,d));
+}
+function findDuplicate(t,excludeId=null){
+  // Return the best match: highest name similarity among candidates
+  const candidates=DATA.filter(d=>d.ID!==excludeId&&_dupCheck(t,d));
+  if(!candidates.length) return null;
+  return candidates.sort((a,b)=>nameSimilarity(b.Nombre,t.Nombre)-nameSimilarity(a.Nombre,t.Nombre))[0];
+}
+function checkDuplicate(){
+  const t={CIF_NIF:document.getElementById('f-cif').value,Nombre:document.getElementById('f-nombre').value,CP:document.getElementById('f-cp').value,Lat:document.getElementById('f-lat').value,Lng:document.getElementById('f-lng').value};
+  const dup=findDuplicate(t,editingId);
+  const warn=document.getElementById('dup-warn');
+  if(dup){
+    const sim=Math.round(nameSimilarity(t.Nombre,dup.Nombre)*100);
+    document.getElementById('dup-msg').textContent=
+      'Posible duplicado ('+sim+'% similitud de nombre): "'+dup.Nombre+'" ('+dup.ID+') · '+dup.Municipio+' · CP '+dup.CP+'. Revisa antes de guardar.';
+    warn.classList.add('show');
+  } else {warn.classList.remove('show');}
+}
+
+// ── ID GENERATOR ──
+function generateId(pais){
+  const prefix={Portugal:'PT',España:'ES',Francia:'FR'}[pais]||'XX';
+  const existing=DATA.filter(t=>t.ID&&t.ID.startsWith(prefix+'-')).map(t=>parseInt(t.ID.split('-')[1]||0)).filter(n=>!isNaN(n));
+  const next=existing.length?Math.max(...existing)+1:1;
+  return prefix+'-'+String(next).padStart(3,'0');
+}
+
+// ── SELECTS ──
+function populateSelects(){
+  // Cadena filter
+  const cadenaEl=document.getElementById('cadenaFilter');
+  if(cadenaEl){
+    const cadenas=[...new Set(DATA.map(t=>t.Cadena).filter(Boolean))].sort();
+    const curCadena=cadenaEl.value;
+    cadenaEl.innerHTML='<option value="">Todas</option>'+cadenas.map(c=>`<option value="${c}">${c}</option>`).join('');
+    cadenaEl.value=curCadena;
+  }
+  const ps=[...new Set(DATA.map(t=>t.Pais).filter(Boolean))].sort();
+  const pvs=[...new Set(DATA.map(t=>t.Provincia).filter(Boolean))].sort();
+  const ds=[...new Set(DATA.map(t=>t.Distrito).filter(Boolean))].sort();
+  document.getElementById('paisFilter').innerHTML='<option value="">Todos</option>'+ps.map(p=>`<option>${p}</option>`).join('');
+  document.getElementById('provFilter').innerHTML='<option value="">Todas</option>'+pvs.map(p=>`<option>${p}</option>`).join('');
+  document.getElementById('distFilter').innerHTML='<option value="">Todos</option>'+ds.map(d=>`<option>${d}</option>`).join('');
+}
+
+// ── FILTER ──
+function getFiltered(){
+  const q=document.getElementById('searchInput').value.toLowerCase();
+  const pa=document.getElementById('paisFilter').value;
+  const pv=document.getElementById('provFilter').value;
+  const di=document.getElementById('distFilter').value;
+  const ca=document.getElementById('cadenaFilter')?.value||'';
+  const cp=document.getElementById('complFilter')?.value||'';
+  return DATA.filter(t=>{
+    const ms=!q||[t.Nombre,t.Municipio,t.Cadena,t.Notas,t.Pais,t.Distrito,t.Provincia,t.CIF_NIF,t.Email,t.CP,t.Direccion,t.Razon_Social,t.Responsable_Nombre,t.Telefono_Fijo,t.Telefono_Movil].some(f=>(f||'').toLowerCase().includes(q));
+    const pct=complScore(t);
+    const complOk=!cp||(cp==='alta'&&pct>=80)||(cp==='media'&&pct>=60&&pct<80)||(cp==='baja'&&pct<60);
+    return ms&&(!pa||t.Pais===pa)&&(!pv||t.Provincia===pv)&&(!di||t.Distrito===di)
+      &&(!ca||t.Cadena===ca)
+      &&complOk
+      &&(activeTipo==='todos'||(t[activeTipo]||'').toUpperCase()==='SI')
+      &&(!activeEstado||t.Estado_Mobius===activeEstado);
+  });
+}
+
+// ── PENDING PANEL ──
+function renderPending(filtered){
+  if(!filtered) filtered=getFiltered();
+  const items=[];
+  // Incomplete fichas (<60%)
+  filtered.filter(t=>complScore(t)<60).forEach(t=>{
+    items.push({t,tag:'pt-incomplete',tagLabel:'Incompleto',ico:'📝',sub:`${complScore(t)}% · ${t.Municipio||t.Provincia||''}`});
+  });
+  // Pending homologación
+  filtered.filter(t=>t.Estado_Mobius==='Homologación').forEach(t=>{
+    items.push({t,tag:'pt-homologacion',tagLabel:'Homologación',ico:'📋',sub:t.Municipio||t.Provincia||''});
+  });
+  // No coords
+  filtered.filter(t=>!parseFloat(t.Lat)||!parseFloat(t.Lng)).forEach(t=>{
+    items.push({t,tag:'pt-nocoords',tagLabel:'Sin coords',ico:'📍',sub:t.Municipio||t.CP||''});
+  });
+  
+  const el=document.getElementById('pending-list');
+  const cnt=document.getElementById('pending-count');
+  if(!el) return;
+  if(!items.length){
+    el.innerHTML='<div style="padding:16px;text-align:center;font-size:11px;color:var(--gray-400);font-family:Montserrat,sans-serif;">✓ Sin acciones pendientes</div>';
+    if(cnt) cnt.textContent='';
+    return;
+  }
+  if(cnt) cnt.textContent=`(${items.length})`;
+  el.innerHTML=items.map(({t,tag,tagLabel,ico,sub})=>`
+    <div class="pending-item" onclick="openModal('${t.ID}')">
+      <div class="pending-ico">${ico}</div>
+      <div style="flex:1;min-width:0">
+        <div class="pending-title" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.Nombre}</div>
+        <div class="pending-sub"><span class="pending-tag ${tag}">${tagLabel}</span>${sub}</div>
+      </div>
+    </div>`).join('');
+}
+
+function renderAll(){const d=getFiltered();renderCards(d);updateMap(d);document.getElementById('res-cnt').textContent=d.length;renderPending(d);updateStats();updateChipCounts();}
+
+// ── CARDS ──
+// ── COMPLETENESS SCORE (memoized) ──
+const _scoreCache=new Map();
+function complScore(t){
+  if(!t||!t.ID) return 0;
+  if(_scoreCache.has(t.ID)) return _scoreCache.get(t.ID);
+  const req=['Nombre','Direccion','CP','Municipio','Estado_Mobius'];
+  const contact=['Telefono_Fijo','Telefono_Movil','Email'];
+  const hasEsp=['Carroceria','Pintura','Mec_Ligera','Mec_Pesada','Neumaticos','Lunas','Electrico','ADAS','Otros'].some(k=>(t[k]||'').toUpperCase()==='SI');
+  const comp=['CIF_NIF','Whatsapp','Web','Lat','Lng','Horario','Idiomas','Capacidad_Diaria','Responsable_Nombre'];
+  let score=0, total=0;
+  req.forEach(f=>{total+=2;if((t[f]||'').trim())score+=2;});
+  contact.forEach(f=>{total+=2;if((t[f]||'').trim())score+=2;});
+  total+=2;if(hasEsp)score+=2;
+  comp.forEach(f=>{total+=1;if((t[f]||'').trim())score+=1;});
+  const result=Math.round(score/total*100);
+  _scoreCache.set(t.ID,result);
+  return result;
+}
+function clearScoreCache(){_scoreCache.clear();}
+function complColor(pct){return pct>=80?'#10B981':pct>=60?'#F59E0B':'#EF4444';}
+
+function cardHTML(t){
+  const tipos=Object.keys(TICO).filter(k=>(t[k]||'').toUpperCase()==='SI').map(k=>`<span class="ttag">${TILBL[k]}</span>`).join('');
+  const flag=FLAGS[t.Pais]||'🔧';
+  const pct=complScore(t);
+  const ecls='e-'+(t.Estado_Mobius||'').replace(/\s/g,'-');
+  const sel=selectedId===t.ID?' selected':'';
+  const hasContact=t.Telefono_Movil||t.Whatsapp||t.Email;
+  return `<div class="tcard${sel}" id="card-${t.ID}" onclick="selectCard('${t.ID}',true)">
+    <span class="tcard-flag">${flag}</span>
+    <div class="tcard-hd">
+      <div class="tcard-ico">${flag}</div>
+      <div>
+        <div class="tcard-name">${t.Nombre}</div>
+        <span class="tcard-cadena">${t.Cadena||'Independiente'}</span>
+      </div>
+    </div>
+    <div class="tcard-tipos">${tipos||'<span style="font-size:10px;color:var(--gray-300)">Sin especialidades</span>'}</div>
+    <div class="tcard-loc">📍 ${[t.Municipio,t.Provincia,t.Pais].filter(Boolean).join(' · ')}</div>
+    <div class="compl-bar-wrap"><div class="compl-bar-fill" style="width:${pct}%;background:${complColor(pct)}"></div></div>
+    <div class="tcard-foot">
+      <div class="tcard-rating">${t.Rating?'★ '+t.Rating:''}${hasContact?' <span style="color:var(--teal-d);font-size:10px">●</span>':''}</div>
+      <span class="ebadge ${ecls}">${t.Estado_Mobius||''}</span>
+    </div>
+  </div>`;
+}
+
+function renderCards(data){
+  _filteredData=data;
+  currentPage=1;
+  renderPage();
+}
+
+function renderPage(){
+  const g=document.getElementById('cardsGrid');
+  if(!_filteredData.length){
+    g.innerHTML=`<div class="empty-st"><div class="ei">🔍</div><p>Sin resultados. Ajusta los filtros.</p></div>`;
+    removePager(); return;
+  }
+  const start=0, end=currentPage*PAGE_SIZE;
+  const visible=_filteredData.slice(start,end);
+  g.innerHTML=visible.map(t=>cardHTML(t)).join('');
+  // Pager
+  if(_filteredData.length>end){
+    let pager=document.getElementById('cards-pager');
+    if(!pager){
+      pager=document.createElement('div');
+      pager.id='cards-pager';
+      pager.style.cssText='text-align:center;padding:16px;grid-column:1/-1;';
+      g.parentNode.insertBefore(pager,g.nextSibling);
+    }
+    const remaining=_filteredData.length-end;
+    pager.innerHTML=`<button class="btn btn-outline" onclick="loadMoreCards()" style="font-size:12px">
+      ↓ Ver ${Math.min(remaining,PAGE_SIZE)} más <span style="color:var(--gray-400)">(${remaining} restantes)</span>
+    </button>`;
+  } else { removePager(); }
+}
+
+function loadMoreCards(){
+  currentPage++;
+  const g=document.getElementById('cardsGrid');
+  const end=currentPage*PAGE_SIZE;
+  const newItems=_filteredData.slice((currentPage-1)*PAGE_SIZE, end);
+  // Append new cards
+  newItems.forEach(t=>{
+    const div=document.createElement('div');
+    div.innerHTML=cardHTML(t);
+    g.appendChild(div.firstChild);
+  });
+  // Update pager
+  const remaining=_filteredData.length-end;
+  const pager=document.getElementById('cards-pager');
+  if(remaining>0&&pager){
+    pager.innerHTML=`<button class="btn btn-outline" onclick="loadMoreCards()" style="font-size:12px">
+      ↓ Ver ${Math.min(remaining,PAGE_SIZE)} más <span style="color:var(--gray-400)">(${remaining} restantes)</span>
+    </button>`;
+  } else { removePager(); }
+}
+
+function removePager(){
+  const p=document.getElementById('cards-pager');
+  if(p) p.remove();
+}
+
+// ── SELECTION ──
+function selectCard(id,centerMap){
+  selectedId=id;
+  document.querySelectorAll('.tcard').forEach(c=>{c.classList.remove('selected');if(c.id==='card-'+id)c.classList.add('selected');});
+  if(markerMap[id]){
+    if(centerMap){map.setView(markerMap[id].getLatLng(),Math.max(map.getZoom(),12));}
+    // Unspiderfy cluster if needed, then open popup
+    setTimeout(()=>{
+      if(clusterGroup&&clusterGroup.getVisibleParent){
+        const parent=clusterGroup.getVisibleParent(markerMap[id]);
+        if(parent&&parent.spiderfy) parent.spiderfy();
+      }
+      markerMap[id].openPopup();
+    },150);
+  } else if(centerMap){
+    // Marker not in viewport yet — pan to it and let refreshViewportMarkers add it
+    const t=DATA.find(x=>x.ID===id);
+    if(t&&t.Lat&&t.Lng){
+      map.setView([parseFloat(t.Lat),parseFloat(t.Lng)],13);
+    }
+  }
+  openModal(id);
+}
+
+// ── MODAL TABS ──
+function switchTab(name){
+  document.querySelectorAll('.mtab').forEach((t,i)=>{t.classList.toggle('active',['info','contacto','operativa','mobius','precios','seguimiento'][i]===name);});
+  document.querySelectorAll('.tab-panel').forEach(p=>{p.classList.toggle('active',p.id==='tab-'+name);});
+}
+
+// ── OPEN MODAL (view/edit) ──
+function populateModalFields(t){
+  setF('id',t.ID);setF('id-display',t.ID);setF('pais',t.Pais);setF('cif',t.CIF_NIF);
+  setF('nombre',t.Nombre);setF('razon',t.Razon_Social||'');setF('cadena',t.Cadena);
+  setF('dir',t.Direccion);setF('prov',t.Provincia);setF('dist',t.Distrito);setF('mun',t.Municipio);setF('cp',t.CP);
+  setF('lat',t.Lat);setF('lng',t.Lng);
+  setF('tel-fijo',t.Telefono_Fijo);setF('tel-mov',t.Telefono_Movil);setF('whatsapp',t.Whatsapp);setF('email',t.Email);setF('web',t.Web);
+  setF('resp-nombre',t.Responsable_Nombre);setF('resp-cargo',t.Responsable_Cargo);
+  setF('capacidad',t.Capacidad_Diaria);setF('horario',t.Horario);setF('idiomas',t.Idiomas);setF('rating',t.Rating);setF('notas',t.Notas);
+  setF('fecha',t.Fecha_Alta);
+  ['Carroceria','Mec_Ligera','Mec_Pesada','Neumaticos','Lunas','Otros'].forEach(k=>{
+    const chk=document.getElementById('chk-'+k);
+    chk.checked=(t[k]||'').toUpperCase()==='SI';
+    document.getElementById('cb-'+k).classList.toggle('checked',chk.checked);
+  });
+  setEstadoForm(t.Estado_Mobius);
+}
+
+function setModalMode(mode){
+  // mode: 'view' | 'edit' | 'new'
+  const modal=document.getElementById('modal');
+  const pill=document.getElementById('mode-pill');
+  const hint=document.getElementById('mode-hint');
+  const editBtn=document.getElementById('btn-edit-mode');
+  const actView=document.getElementById('actions-view');
+  const actEdit=document.getElementById('actions-edit');
+  if(mode==='view'){
+    isEditMode=false;
+    modal.className='modal view-mode';
+    pill.className='mode-pill view';pill.textContent='👁 Visualización';
+    hint.textContent='Solo lectura · Pulsa Editar para modificar';
+    editBtn.style.display='inline-flex';
+    actView.style.display='flex';actEdit.style.display='none';
+  } else {
+    isEditMode=true;
+    modal.className='modal edit-mode';
+    pill.className='mode-pill edit';pill.textContent='✏️ Edición';
+    hint.textContent='Modo edición activo · Guarda o cancela los cambios';
+    editBtn.style.display='none';
+    actView.style.display='none';actEdit.style.display='flex';
+  }
+}
+
+function enterEditMode(){setModalMode('edit');}
+
+function cancelEdit(){
+  if(!editingId){document.getElementById('overlay').classList.remove('open');return;}
+  // Restore original data
+  const t=DATA.find(x=>x.ID===editingId);
+  if(t){populateModalFields(t);}
+  setModalMode('view');
+  document.getElementById('dup-warn').classList.remove('show');
+}
+
+function openModal(id){
+  const t=DATA.find(x=>x.ID===id);if(!t)return;
+  editingId=id;
+  document.getElementById('m-id').textContent=t.ID+' · '+(FLAGS[t.Pais]||'')+' '+t.Pais;
+  document.getElementById('m-nombre').textContent=t.Nombre;
+  document.getElementById('m-sub').textContent=(t.Cadena||'Independiente')+(t.Municipio?' · '+t.Municipio:'');
+  populateModalFields(t);
+  // Maps btn — usa nombre+dirección para máxima precisión
+  const mb=document.getElementById('btn-maps-bar');
+  const mapsQuery=[t.Nombre,t.Direccion,t.CP,t.Municipio,t.Pais].filter(Boolean).join(', ');
+  mb.href='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(mapsQuery);
+  mb.style.display='inline-flex';
+  // Delete btns
+  document.getElementById('btn-delete-view').style.display='inline-flex';
+  document.getElementById('btn-delete-edit').style.display='inline-flex';
+  document.getElementById('dup-warn').classList.remove('show');
+  switchTab('info');
+  setModalMode('view');
+  document.getElementById('overlay').classList.add('open');
+}
+
+// ── OPEN NEW ──
+function openNewTaller(){
+  editingId=null;
+  document.getElementById('m-id').textContent='NUEVO TALLER';
+  document.getElementById('m-nombre').textContent='Nuevo taller';
+  document.getElementById('m-sub').textContent='';
+  const fields=['id','id-display','pais','cif','nombre','cadena','dir','prov','dist','mun','cp','lat','lng','tel-fijo','tel-mov','whatsapp','email','web','resp-nombre','resp-cargo','capacidad','horario','idiomas','rating','notas','fecha'];
+  fields.forEach(f=>setF(f,''));
+  setF('fecha',new Date().toISOString().split('T')[0]);
+  ['Carroceria','Mec_Ligera','Mec_Pesada','Neumaticos','Lunas','Otros'].forEach(k=>{
+    document.getElementById('chk-'+k).checked=false;
+    document.getElementById('cb-'+k).classList.remove('checked');
+  });
+  setEstadoForm('Identificado');
+  document.getElementById('btn-delete-view').style.display='none';
+  document.getElementById('btn-delete-edit').style.display='none';
+  document.getElementById('btn-maps-bar').style.display='none';
+  document.getElementById('dup-warn').classList.remove('show');
+  switchTab('info');
+  setModalMode('edit');
+  document.getElementById('overlay').classList.add('open');
+}
+
+// ── SAVE ──
+function saveTaller(){
+  const nombre=getF('nombre'),pais=getF('pais'),cp=getF('cp');
+  if(!nombre||!pais){showToast('Nombre y País son obligatorios','error');switchTab('info');return;}
+  const cif=getF('cif');
+  const t={
+    ID:editingId||(document.getElementById('f-id').value||generateId(pais)),
+    Pais:pais,Nombre:nombre,Cadena:getF('cadena'),CIF_NIF:cif,
+    Razon_Social:getF('razon'),Carroceria:cbVal('Carroceria'),Pintura:cbVal('Pintura'),Mec_Ligera:cbVal('Mec_Ligera'),Mec_Pesada:cbVal('Mec_Pesada'),
+    Neumaticos:cbVal('Neumaticos'),Lunas:cbVal('Lunas'),Electrico:cbVal('Electrico'),ADAS:cbVal('ADAS'),Otros:cbVal('Otros'),
+    Direccion:getF('dir'),Distrito:getF('dist'),Provincia:getF('prov'),Municipio:getF('mun'),CP:cp,
+    Telefono_Fijo:getF('tel-fijo'),Telefono_Movil:getF('tel-mov'),Whatsapp:getF('whatsapp'),
+    Email:getF('email'),Web:getF('web'),
+    Lat:getF('lat'),Lng:getF('lng'),Rating:getF('rating'),
+    Capacidad_Diaria:getF('capacidad'),Horario:getF('horario'),Idiomas:getF('idiomas'),
+    Estado_Mobius:getF('estado'),
+    Responsable_Nombre:getF('resp-nombre'),Responsable_Cargo:getF('resp-cargo'),
+    Fecha_Ultimo_Contacto:getF('ultimo-contacto'),
+    MO_Hora:getF('mo-hora'),Tarifa_Diagnostico:getF('tarifa-diag'),
+    Descuento_Mobius:getF('descuento'),Condiciones_Pago:getF('condiciones'),
+    Garantia:getF('garantia'),Plazo_Entrega:getF('plazo'),
+    Notas_Precios:getF('notas-precios'),
+    Comentarios:editingId?(DATA.find(r=>r.ID===editingId)||{}).Comentarios||'':'',
+    Fecha_Alta:getF('fecha'),Notas:getF('notas')
+  };
+  // Validación de campos obligatorios
+  const required=[
+    {id:'nombre',label:'Nombre del taller'},
+    {id:'pais',label:'País'},
+    {id:'dir',label:'Dirección'},
+    {id:'cp',label:'Código postal'},
+    {id:'mun',label:'Municipio'},
+    {id:'prov',label:'Provincia'},
+    {id:'estado',label:'Estado Mobius'},
+  ];
+  for(const req of required){
+    const val=getF(req.id)||document.getElementById('f-'+req.id)?.value||'';
+    if(!val.trim()){showToast('Campo obligatorio: '+req.label,'error');switchTab('info');return;}
+  }
+  // Rating: default 0 si vacío
+  if(!t.Rating||t.Rating.trim()==='') t.Rating='0';
+
+  // Dedup check
+  const dup=findDuplicate(t,editingId);
+  if(dup){
+    if(!confirm('⚠️ Posible duplicado detectado: "'+dup.Nombre+'" ('+dup.ID+'). ¿Guardar igualmente?'))return;
+  }
+  if(editingId){
+    const idx=DATA.findIndex(x=>x.ID===editingId);
+    if(idx>=0)DATA[idx]=t;
+  } else {
+    if(!t.ID)t.ID=generateId(pais);
+    DATA.push(t);
+  }
+  pendingChanges++;
+  saveToStorage();populateSelects();renderAll();updateStats();updateSbCounts();
+  if(editingId){
+    // Refresh header and return to view mode
+    const saved=DATA.find(x=>x.ID===t.ID);
+    if(saved){
+      document.getElementById('m-nombre').textContent=saved.Nombre;
+      document.getElementById('m-sub').textContent=(saved.Cadena||'Independiente')+(saved.Municipio?' · '+saved.Municipio:'');
+    }
+    editingId=t.ID;
+    setModalMode('view');
+    showToast('Taller actualizado. Exporta el CSV para guardar permanentemente.','success');
+  } else {
+    document.getElementById('overlay').classList.remove('open');
+    showToast('Taller añadido. Exporta el CSV para guardar permanentemente.','success');
+  }
+  // Volver a modo visualización
+  setTimeout(()=>{ if(editingId) exitEditMode(editingId); },200);
+}
+
+// ── DELETE ──
+function deleteTaller(){
+  if(!editingId)return;
+  const t=DATA.find(x=>x.ID===editingId);
+  if(!t)return;
+  if(!confirm('¿Eliminar "'+t.Nombre+'"? Esta acción no se puede deshacer (hasta exportar CSV).'))return;
+  DATA=DATA.filter(x=>x.ID!==editingId);
+  pendingChanges++;saveToStorage();populateSelects();renderAll();updateStats();updateSbCounts();
+  document.getElementById('overlay').classList.remove('open');
+  showToast('Taller eliminado. Exporta el CSV para que el cambio sea permanente.','info');
+}
+
+// ── HELPERS ──
+function setF(id,val){const el=document.getElementById('f-'+id);if(el)el.value=val||'';}
+function getF(id){const el=document.getElementById('f-'+id);return el?el.value.trim():'';}
+function cbVal(k){return document.getElementById('chk-'+k).checked?'SI':'NO';}
+function updateTipoCb(chk){
+  const k=chk.id.replace('chk-','');
+  document.getElementById('cb-'+k).classList.toggle('checked',chk.checked);
+}
+function selEstadoForm(el){
+  document.querySelectorAll('.estado-opt').forEach(o=>o.className='estado-opt');
+  el.className='estado-opt sel-'+(el.dataset.v==='En negociación'?'Negociacion':el.dataset.v);
+  document.getElementById('f-estado').value=el.dataset.v;
+}
+function setEstadoForm(val){
+  document.querySelectorAll('.estado-opt').forEach(o=>{
+    o.className='estado-opt'+(o.dataset.v===val?' sel-'+(val==='En negociación'?'Negociacion':val):'');
+  });
+  document.getElementById('f-estado').value=val||'Identificado';
+}
+
+// ── STATS ──
+function updateStats(){
+  const d=getFiltered();
+  const n=d.length;
+  const pct=(v,tot)=>tot?Math.round(v/tot*100):0;
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+
+  // ── Single pass over filtered data ──
+  let nHom=0,nProc=0,nAlcance=0,nStars=0,nPending=0,nGeo=0,sumCompl=0;
+  const PROC_STATES=['Contactado','En negociación','Homologación'];
+  const ALCANCE_STATES=['Contactado','En negociación','Homologación','Homologado'];
+  d.forEach(t=>{
+    const sc=complScore(t);
+    sumCompl+=sc;
+    if(t.Estado_Mobius==='Homologado') nHom++;
+    if(PROC_STATES.includes(t.Estado_Mobius)) nProc++;
+    if(ALCANCE_STATES.includes(t.Estado_Mobius)) nAlcance++;
+    if(parseFloat(t.Rating)>=4.5) nStars++;
+    if(sc<60) nPending++;
+    if(parseFloat(t.Lat)&&parseFloat(t.Lng)) nGeo++;
+  });
+  const avgCompl=n?Math.round(sumCompl/n):0;
+  const consolidacion=n?Math.round((1-nPending/n)*100):0;
+
+  set('s-total', n.toLocaleString('es-ES'));
+  set('s-pct-hom', pct(nHom,n)+'%');
+  set('s-n-hom', nHom+' talleres');
+  set('s-pct-proc', pct(nProc,n)+'%');
+  set('s-n-proc', nProc+' talleres');
+  set('s-pct-alcance', pct(nAlcance,n)+'%');
+  set('s-pct-stars', pct(nStars,n)+'%');
+  set('s-n-stars', nStars+' talleres');
+  set('s-consolidacion', consolidacion+'%');
+  set('s-completitud', avgCompl+'%');
+  set('s-geolocalizados', pct(nGeo,n)+'%');
+  set('s-modificados', pendingChanges);
+
+  // ── Sidebar KPIs (siempre sobre DATA completo) ──
+  const kT=document.getElementById('kpi-total');
+  const kH=document.getElementById('kpi-hom');
+  const kP=document.getElementById('kpi-pend');
+  const kC=document.getElementById('kpi-compl');
+  if(kT) kT.textContent=DATA.length.toLocaleString('es-ES');
+  if(kH) kH.textContent=DATA.filter(t=>t.Estado_Mobius==='Homologado').length;
+  if(kP) kP.textContent=DATA.filter(t=>['Contactado','En negociación','Homologación'].includes(t.Estado_Mobius)).length;
+  if(kC&&DATA.length){
+    const avg=Math.round(DATA.reduce((s,t)=>s+complScore(t),0)/DATA.length);
+    kC.textContent=avg+'%';
+  }
+}
+
+function updateChipCounts(){
+  const d=getFiltered();
+  const n=d.length;
+  // Single pass: count all specialties and states simultaneously
+  const tipoCnts={Carroceria:0,Pintura:0,Mec_Ligera:0,Mec_Pesada:0,Neumaticos:0,Lunas:0,Electrico:0,ADAS:0,Otros:0};
+  const estCnts={Identificado:0,Contactado:0,'En negociación':0,Homologación:0,Homologado:0};
+  d.forEach(t=>{
+    for(const k in tipoCnts) if((t[k]||'').toUpperCase()==='SI') tipoCnts[k]++;
+    if(t.Estado_Mobius in estCnts) estCnts[t.Estado_Mobius]++;
+  });
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v>0?v.toLocaleString('es-ES'):'';};
+  set('cnt-tipo-todos',n);
+  for(const k in tipoCnts) set('cnt-tipo-'+k,tipoCnts[k]);
+  set('cnt-est-todos',n);
+  set('cnt-est-Identificado',estCnts['Identificado']);
+  set('cnt-est-Contactado',estCnts['Contactado']);
+  set('cnt-est-Ennegociacion',estCnts['En negociación']);
+  set('cnt-est-Homologacion',estCnts['Homologación']);
+  set('cnt-est-Homologado',estCnts['Homologado']);
+}
+function updateSbCounts(){
+  document.getElementById('sc-todos').textContent=DATA.length;
+  document.getElementById('sc-PT').textContent=DATA.filter(t=>t.Pais==='Portugal').length;
+  document.getElementById('sc-ES').textContent=DATA.filter(t=>t.Pais==='España').length;
+  document.getElementById('sc-FR').textContent=DATA.filter(t=>t.Pais==='Francia').length;
+  document.getElementById('sc-hom').textContent=DATA.filter(t=>t.Estado_Mobius==='Homologado').length;
+  document.getElementById('sc-con').textContent=DATA.filter(t=>t.Estado_Mobius==='Contactado').length;
+  document.getElementById('sc-neg').textContent=DATA.filter(t=>t.Estado_Mobius==='En negociación').length;
+  const holEl=document.getElementById('sc-hol');if(holEl)holEl.textContent=DATA.filter(t=>t.Estado_Mobius==='Homologación').length;
+  document.getElementById('sc-ide').textContent=DATA.filter(t=>t.Estado_Mobius==='Identificado').length;
+}
+
+// ── SIDEBAR FILTER ──
+function sbFilter(type,val){
+  document.querySelectorAll('.sidebar .sb-item').forEach(i=>i.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  if(type==='pais'){document.getElementById('paisFilter').value=val;}
+  else if(type==='estado'){
+    activeEstado=val;
+    document.querySelectorAll('.echip').forEach(c=>{c.classList.remove('active');if(c.dataset.estado===val)c.classList.add('active');});
+  }
+  renderAll();
+}
+
+// ── CHIP SELECTORS ──
+function selTipo(el){document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));el.classList.add('active');activeTipo=el.dataset.tipo;renderAll();}
+function selEstado(el){document.querySelectorAll('.echip').forEach(c=>c.classList.remove('active'));el.classList.add('active');activeEstado=el.dataset.estado;renderAll();}
+function clearFilters(){
+  const ca=document.getElementById('cadenaFilter');if(ca)ca.value='';
+  const cp=document.getElementById('complFilter');if(cp)cp.value='';
+  document.getElementById('searchInput').value='';
+  ['paisFilter','provFilter','distFilter'].forEach(id=>document.getElementById(id).value='');
+  activeTipo='todos';activeEstado='';
+  document.querySelector('.chip[data-tipo="todos"]').click();
+  document.querySelector('.echip[data-estado=""]').click();
+  document.querySelectorAll('.sidebar .sb-item').forEach((i,idx)=>{i.classList.remove('active');if(idx===0)i.classList.add('active');});
+  renderAll();
+}
+function closeOverlay(e){if(e.target===document.getElementById('overlay'))document.getElementById('overlay').classList.remove('open');}
+
+// ── TOAST ──
+function showToast(msg,type='info'){
+  const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+type+' show';
+  setTimeout(()=>t.classList.remove('show'),3500);
+}
+
+// ── FALLBACK DATA ──
+function loadFallback(){
+  const fb=`ID,Pais,Nombre,Cadena,CIF_NIF,Carroceria,Mec_Ligera,Mec_Pesada,Neumaticos,Lunas,Otros,Direccion,Distrito,Provincia,Municipio,CP,Telefono_Fijo,Telefono_Movil,Whatsapp,Email,Web,Lat,Lng,Rating,Capacidad_Diaria,Horario,Idiomas,Estado_Mobius,Responsable_Nombre,Responsable_Cargo,Fecha_Alta,Notas
+PT-001,Portugal,Rede AutoSolutions,Independiente,,SI,NO,NO,NO,NO,NO,R. Rainha Dona Luísa de Gusmão 8B,Lisboa,Lisboa,Lisboa,1600-686,+351 21 587 0843,,,, redeautosolutions.pt,38.7672,-9.1590,4.2,,Lun-Vie 8-18h,PT,Identificado,,,2026-06-09,Especialistas chapa y pintura
+PT-002,Portugal,Auto Rampa 2001,Independiente,,SI,NO,NO,NO,NO,NO,Telheiros da Ajuda 5A,Lisboa,Lisboa,Lisboa,1300-019,+351 919 738 105,,,,, 38.7091,-9.1993,4.5,,Lun-Vie 8:30-17:30h,PT,Identificado,,,2026-06-09,Especialistas en chapa
+PT-004,Portugal,Mr. Fix - Chapa e Pintura,Independiente,,SI,NO,NO,NO,NO,NO,"R. Liberdade 128 D, Belas",Lisboa,Lisboa,Sintra,2605-181,,+351 926 168 843,+351 926 168 843,,,38.7837,-9.2855,4.8,,Lun-Vie 9-18h,PT,Identificado,,,2026-06-09,209 reseñas. Muy bien valorado
+PT-009,Portugal,Perfect Hammer,Independiente,,SI,NO,NO,NO,NO,NO,R. António da Silva Marinho 29,Porto,Porto,Porto,4100-064,,+351 913 382 823,+351 913 382 823,,,41.1751,-8.6540,4.8,,Lun-Vie 9-18:30h,PT,Identificado,,,2026-06-09,212 reseñas. Especialistas PDR
+PT-011,Portugal,100% AUTO,Independiente,,SI,SI,NO,NO,NO,NO,Cerro de Bruxo 122A,Faro,Faro,Faro,8005,+351 289 149 353,,,,,37.0350,-7.9317,4.7,,Lun-Vie 8:30-18h,PT,Identificado,,,2026-06-09,125 reseñas. Muy valorado en Algarve
+PT-014,Portugal,CGA Car Service Portugal,CGA,,SI,SI,NO,NO,NO,NO,Múltiples ubicaciones,Nacional,Nacional,Nacional,,,,,,,39.3999,-8.2245,,,,PT;ES,Contactado,,,2026-06-09,Red con +100 talleres en Portugal`;
+  loadCSV(fb,'datos de muestra',false);
+}
+
+// ── EVENTS ──
+document.getElementById('searchInput').addEventListener('input',renderAll);
+document.getElementById('paisFilter').addEventListener('change',renderAll);
+document.getElementById('provFilter').addEventListener('change',renderAll);
+document.getElementById('distFilter').addEventListener('change',renderAll);
+document.getElementById('f-pais').addEventListener('change',function(){
+  if(!editingId)document.getElementById('f-id').value=generateId(this.value);
+});
+
+// ── INIT ──
+initMap();
+reloadCSV();
+
+// ── GOOGLE MAPS URL IMPORT ──
+let _gmapsData=null;
+
+function openGMapsDialog(){
+  _gmapsData=null;
+  document.getElementById('gmaps-url-input').value='';
+  document.getElementById('gmaps-result').classList.remove('show');
+  document.getElementById('gmaps-error').classList.remove('show');
+  document.getElementById('gmaps-match-section').style.display='none';
+  document.getElementById('gmaps-apply-btn').style.display='none';
+  document.getElementById('gmapsOverlay').classList.add('open');
+}
+
+function parseGMapsURL(){
+  const url=document.getElementById('gmaps-url-input').value.trim();
+  document.getElementById('gmaps-error').classList.remove('show');
+  document.getElementById('gmaps-result').classList.remove('show');
+  document.getElementById('gmaps-apply-btn').style.display='none';
+  document.getElementById('gmaps-match-section').style.display='none';
+
+  // Extract name from /place/NAME/@
+  const nameMatch=url.match(/\/place\/([^\/@]+)/);
+  if(!nameMatch){document.getElementById('gmaps-error').classList.add('show');return;}
+  const name=decodeURIComponent(nameMatch[1].replace(/\+/g,' '));
+
+  // Extract coords — URLs can embed multiple !3d/!4d pairs (context + target).
+  // Use the @ viewport coords to identify which pair belongs to the target place.
+  let lat='',lng='';
+  const atM=url.match(/@([-\d.]+),([-\d.]+)/);
+  const allPairs=[...url.matchAll(/!3d([-\d.]+)!4d([-\d.]+)/g)];
+  if(allPairs.length){
+    if(allPairs.length===1||!atM){
+      lat=allPairs[allPairs.length-1][1];lng=allPairs[allPairs.length-1][2];
+    } else {
+      // Pick the pair closest to the @ viewport center (= what the user is looking at)
+      const atLat=parseFloat(atM[1]),atLng=parseFloat(atM[2]);
+      let best=allPairs[0],bestD=999;
+      allPairs.forEach(p=>{
+        const d=Math.abs(parseFloat(p[1])-atLat)+Math.abs(parseFloat(p[2])-atLng);
+        if(d<bestD){bestD=d;best=p;}
+      });
+      lat=best[1];lng=best[2];
+    }
+  } else if(atM){lat=atM[1];lng=atM[2];}
+  if(!lat||!lng){document.getElementById('gmaps-error').classList.add('show');return;}
+
+  // Show initial result
+  document.getElementById('gmaps-res-title').textContent=name;
+  document.getElementById('gmaps-res-lat').textContent=lat;
+  document.getElementById('gmaps-res-lng').textContent=lng;
+  document.getElementById('gmaps-res-addr').textContent='Consultando Nominatim…';
+  document.getElementById('gmaps-res-mun').textContent='…';
+  document.getElementById('gmaps-res-prov').textContent='…';
+  document.getElementById('gmaps-res-cp').textContent='…';
+  document.getElementById('gmaps-res-pais').textContent='…';
+  document.getElementById('gmaps-result').classList.add('show');
+
+  _gmapsData={name,lat:parseFloat(lat),lng:parseFloat(lng),direccion:'',municipio:'',provincia:'',cp:'',pais:''};
+
+  // ── Duplicate check immediately (before Nominatim) using name + coords ──
+  const earlyDup=findDuplicate({
+    Nombre:name, CP:'', Lat:lat, Lng:lng,
+    CIF_NIF:''
+  }, null);
+  if(earlyDup){
+    _gmapsData.existingId=earlyDup.ID;
+    const sim=Math.round(nameSimilarity(name,earlyDup.Nombre)*100);
+    document.getElementById('gmaps-match-info').textContent=
+      earlyDup.ID+' · '+earlyDup.Nombre+' · '+(earlyDup.Municipio||earlyDup.Provincia||'')+' ('+sim+'% similitud)';
+    document.getElementById('gmaps-match-section').style.display='block';
+    document.getElementById('gmaps-apply-btn').style.display='inline-flex';
+  }
+
+  // Reverse geocode via Nominatim (browser call — no restrictions)
+  const reverseUrl=`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`;
+  fetch(reverseUrl,{headers:{'User-Agent':'MobiusNetworkApp/1.0','Accept-Language':'es'}})
+    .then(r=>r.json())
+    .then(d=>{
+      const a=d.address||{};
+      const road=[a.road,a.house_number].filter(Boolean).join(', ');
+      const mun=a.city||a.town||a.village||a.municipality||'';
+      const prov=a.state||a.province||'';
+      const cp=a.postcode||'';
+      const countryCode=(a.country_code||'').toUpperCase();
+      const paisMap={ES:'España',PT:'Portugal',FR:'Francia'};
+      const pais=paisMap[countryCode]||a.country||countryCode;
+
+      document.getElementById('gmaps-res-addr').textContent=road||d.display_name?.split(',')[0]||'—';
+      document.getElementById('gmaps-res-mun').textContent=mun||'—';
+      document.getElementById('gmaps-res-prov').textContent=prov||'—';
+      document.getElementById('gmaps-res-cp').textContent=cp||'—';
+      document.getElementById('gmaps-res-pais').textContent=pais||'—';
+
+      _gmapsData={..._gmapsData,direccion:road,municipio:mun,provincia:prov,cp,pais};
+
+      // Re-check duplicate with CP now available (may find more matches)
+      if(!_gmapsData.existingId){
+        const lateDup=findDuplicate({Nombre:name,CP:cp,Lat:lat,Lng:lng,CIF_NIF:''},null);
+        if(lateDup){
+          _gmapsData.existingId=lateDup.ID;
+          const sim=Math.round(nameSimilarity(name,lateDup.Nombre)*100);
+          document.getElementById('gmaps-match-info').textContent=
+            lateDup.ID+' · '+lateDup.Nombre+' · '+(lateDup.Municipio||'')+' ('+sim+'% similitud)';
+          document.getElementById('gmaps-match-section').style.display='block';
+        }
+      }
+      document.getElementById('gmaps-apply-btn').style.display='inline-flex';
+    })
+    .catch(()=>{
+      document.getElementById('gmaps-res-addr').textContent='No disponible (sin conexión a Nominatim)';
+      _gmapsData.pais='';
+      document.getElementById('gmaps-apply-btn').style.display='inline-flex';
+    });
+}
+
+function applyGMapsImport(){
+  if(!_gmapsData) return;
+  const mode=document.querySelector('input[name="gmaps-mode"]:checked')?.value||'fill';
+  const d=_gmapsData;
+
+  if(d.existingId){
+    // Update existing
+    const idx=DATA.findIndex(t=>t.ID===d.existingId);
+    if(idx>=0){
+      const t=DATA[idx];
+      const fill=(field,val)=>{ if(val&&(!t[field]||mode==='overwrite')) t[field]=val; };
+      fill('Lat',String(d.lat)); fill('Lng',String(d.lng));
+      fill('Direccion',d.direccion); fill('Municipio',d.municipio);
+      fill('Provincia',d.provincia); fill('CP',d.cp);
+      if(d.pais) fill('Pais',d.pais);
+      DATA[idx]=t;
+      saveToStorage();pendingChanges++;
+      renderAll();updateStats();updateSbCounts();
+      document.getElementById('gmapsOverlay').classList.remove('open');
+      showToast('Taller actualizado: '+t.Nombre,'success');
+      openModal(t.ID);
+    }
+  } else {
+    // Check for fuzzy duplicate before opening form
+    const potentialDup=findDuplicate({Nombre:d.name,CP:d.cp,Lat:String(d.lat),Lng:String(d.lng)},null);
+    if(potentialDup){
+      const sim=Math.round(nameSimilarity(d.name,potentialDup.Nombre)*100);
+      if(!confirm(`⚠️ Posible duplicado (${sim}% similitud):\n"${potentialDup.Nombre}" (${potentialDup.ID}) · ${potentialDup.Municipio}\n\n¿Abrir de todas formas como taller nuevo?`)) return;
+    }
+    // New taller — open form pre-filled
+    document.getElementById('gmapsOverlay').classList.remove('open');
+    openNewTaller();
+    setTimeout(()=>{
+      setF('nombre',d.name);
+      setF('dir',d.direccion);
+      setF('mun',d.municipio);
+      setF('prov',d.provincia);
+      setF('cp',d.cp);
+      setF('lat',String(d.lat));
+      setF('lng',String(d.lng));
+      if(d.pais){
+        const pSel=document.getElementById('f-pais');
+        [...pSel.options].forEach(o=>{if(o.value===d.pais)o.selected=true;});
+        document.getElementById('f-id').value=generateId(d.pais);
+        document.getElementById('f-id-display').value=document.getElementById('f-id').value;
+      }
+      document.getElementById('m-nombre').textContent=d.name;
+    },100);
+  }
+  _gmapsData=null;
+}
+
+
+// ── SIDEBAR NAVIGATION ──
+document.querySelectorAll('.sb-nav').forEach(el=>{
+  el.addEventListener('click',()=>{
+    const mod=el.dataset.mod;
+    document.querySelectorAll('.sb-nav').forEach(e=>e.classList.remove('active'));
+    el.classList.add('active');
+    if(mod==='importexport'){
+      // Trigger file input or show import toast
+      showToast('Usa los botones Cargar / Exportar en la barra superior','info');
+    } else if(mod==='config'){
+      openSettings();
+    } else if(mod!=='talleres'){
+      showToast(`Módulo "${el.textContent.trim()}" — próximamente`,'info');
+    }
+  });
+});
+
+
+// ═══════════════════════════════════════════════════
+// MÓDULO DE PROXIMIDAD
+// ═══════════════════════════════════════════════════
+let _proxResults = []; // [{taller, dist}]
+let _proxOrigin  = null; // {lat, lng, label}
+
+// Haversine distance in km
+function haversine(lat1, lng1, lat2, lng2){
+  const R=6371, toR=Math.PI/180;
+  const dLat=(lat2-lat1)*toR, dLng=(lng2-lng1)*toR;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*toR)*Math.cos(lat2*toR)*Math.sin(dLng/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+function fmtDist(km){
+  if(km<1) return Math.round(km*1000)+'m';
+  if(km<10) return km.toFixed(1)+'km';
+  return Math.round(km)+'km';
+}
+
+async function geocodeQuery(query){
+  const url='https://nominatim.openstreetmap.org/search?format=json&limit=1&accept-language=es&q='+encodeURIComponent(query);
+  const r=await fetch(url); // Sin headers custom — evita preflight CORS
+  const d=await r.json();
+  if(d&&d.length) return {lat:parseFloat(d[0].lat),lng:parseFloat(d[0].lon),label:d[0].display_name.split(',').slice(0,3).join(', ')};
+  return null;
+}
+
+async function searchProximity(){
+  const query=document.getElementById('proxInput').value.trim();
+  if(!query){showToast('Introduce una dirección para buscar','error');return;}
+  const status=document.getElementById('prox-status');
+  status.textContent='Buscando…';
+  try{
+    const origin=await geocodeQuery(query);
+    if(!origin){status.textContent='Dirección no encontrada';showToast('No se encontró la dirección. Prueba con más detalle.','error');return;}
+    _proxOrigin=origin;
+    document.getElementById('proxInput').value=origin.label;
+    status.textContent='';
+    computeProximity(origin.lat,origin.lng,origin.label);
+  }catch(e){
+    status.textContent='Sin conexión';
+    showToast('No se pudo geocodificar. Comprueba la conexión.','error');
+  }
+}
+
+function useMyLocation(){
+  if(!navigator.geolocation){showToast('Geolocalización no disponible en este navegador','error');return;}
+  const status=document.getElementById('prox-status');
+  status.textContent='Obteniendo ubicación…';
+  navigator.geolocation.getCurrentPosition(
+    pos=>{
+      const {latitude:lat,longitude:lng}=pos.coords;
+      _proxOrigin={lat,lng,label:'Tu ubicación actual'};
+      document.getElementById('proxInput').value='Tu ubicación actual';
+      status.textContent='';
+      computeProximity(lat,lng,'Tu ubicación actual');
+    },
+    ()=>{status.textContent='';showToast('No se pudo obtener la ubicación','error');}
+  );
+}
+
+function computeProximity(lat,lng,label){
+  const base=getFiltered(); // respeta filtros activos
+  const limit=parseInt(document.getElementById('proxLimit').value)||0;
+
+  // Solo talleres con coords
+  const withCoords=base.filter(t=>{
+    const la=parseFloat(t.Lat),lo=parseFloat(t.Lng);
+    return la&&lo&&!isNaN(la)&&!isNaN(lo);
+  });
+
+  // Calcular distancias
+  _proxResults=withCoords.map(t=>({
+    taller:t,
+    dist:haversine(lat,lng,parseFloat(t.Lat),parseFloat(t.Lng))
+  })).sort((a,b)=>a.dist-b.dist);
+
+  if(limit>0) _proxResults=_proxResults.slice(0,limit);
+
+  // Título del modal
+  document.getElementById('prox-modal-title').textContent=
+    `Talleres cercanos a: ${label.split(',')[0]}`;
+  document.getElementById('prox-modal-sub').textContent=
+    `${_proxResults.length} de ${withCoords.length} talleres con coordenadas · filtros activos aplicados`;
+
+  document.getElementById('proxEspFilter').value='';
+  renderProximityResults();
+  document.getElementById('proxOverlay').classList.add('open');
+}
+
+function renderProximityResults(){
+  const esp=document.getElementById('proxEspFilter').value;
+  const list=esp
+    ? _proxResults.filter(({taller:t})=>(t[esp]||'').toUpperCase()==='SI')
+    : _proxResults;
+
+  const TIPOS=['Carroceria','Pintura','Mec_Ligera','Mec_Pesada','Neumaticos','Lunas','Electrico','ADAS','Otros'];
+
+  if(!list.length){
+    document.getElementById('prox-results').innerHTML=
+      '<div class="prox-empty">Sin resultados para los filtros seleccionados</div>';
+    return;
+  }
+
+  document.getElementById('prox-results').innerHTML=list.map(({taller:t,dist},i)=>{
+    const rank=i+1;
+    const ecol=({Identificado:'#60A5FA',Contactado:'#FBBF24','En negociación':'#F472B6',Homologación:'#8B5CF6',Homologado:'#4ADE80'})[t.Estado_Mobius]||'#9BA3B2';
+    const tipos=TIPOS.filter(k=>(t[k]||'').toUpperCase()==='SI');
+    const tiposBadges=tipos.map(k=>`<span class="tbadge" style="font-size:9px">${TICO[k]}${TILBL[k]}</span>`).join('');
+    const tel=t.Telefono_Fijo||t.Telefono_Movil||'';
+    const pct=complScore(t);
+    const pctColor=pct>=80?'#059669':pct>=60?'#D97706':'#DC2626';
+    return `
+    <div class="prox-item" onclick="closeProximity();openModal('${t.ID}')">
+      <div class="prox-rank${rank<=3?' top3':''}">${rank}</div>
+      <div class="prox-dist">
+        <div class="prox-dist-val">${fmtDist(dist)}</div>
+        <div class="prox-dist-lbl">distancia</div>
+      </div>
+      <div class="prox-info">
+        <div class="prox-name">${t.Nombre}</div>
+        <div class="prox-meta">${[t.Municipio,t.Provincia,t.Pais].filter(Boolean).join(' · ')}
+          &nbsp;·&nbsp;<span style="font-weight:700;color:${ecol}">${t.Estado_Mobius||''}</span>
+          &nbsp;·&nbsp;<span style="color:${pctColor};font-weight:700">${pct}%</span>
+        </div>
+        <div class="prox-tipos">${tiposBadges}</div>
+      </div>
+      <div class="prox-contact">
+        ${tel?`<div class="prox-tel">${tel}</div>`:''}
+        ${t.Rating?`<div style="color:#D97706;font-weight:700;margin-top:3px">★ ${t.Rating}</div>`:''}
+        <div style="font-size:9px;color:var(--gray-300);margin-top:2px">${t.ID}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function closeProximity(){
+  document.getElementById('proxOverlay').classList.remove('open');
+}
+
+
+// ── GUARDAR ANTES DE CERRAR ──
+window.addEventListener('beforeunload', function(){
+  if(DATA.length) saveToStorage();
+});
+
+
+// ══════════════════════════════════════════════════════
+// MÓDULO: ENRIQUECIMIENTO DE FICHA v2
+// Fuentes: Nominatim · Overpass/OSM · SIRENE (FR) · OpenCorporates
+// ══════════════════════════════════════════════════════
+let _enrichSuggestions={}, _enrichSources={}, _enrichTallerId=null;
+
+const ENRICH_LABELS={
+  Lat:'Latitud',Lng:'Longitud',CP:'Código postal',
+  Municipio:'Municipio',Provincia:'Provincia',Distrito:'Distrito',
+  Direccion:'Dirección',Distrito:'Distrito / Región',Razon_Social:'Razón social',CIF_NIF:'CIF/NIF/SIRET',
+  Cadena:'Cadena / Grupo',Telefono_Fijo:'Teléfono fijo',Telefono_Movil:'Móvil',
+  Whatsapp:'WhatsApp',Web:'Sitio web',Email:'Email',Horario:'Horario',
+  Capacidad_Diaria:'Capacidad diaria',Idiomas:'Idiomas',
+  Carroceria:'Especialidad: Carrocería',Pintura:'Especialidad: Pintura',
+  Mec_Ligera:'Especialidad: Mec. Ligera',Mec_Pesada:'Especialidad: Mec. Pesada',
+  Neumaticos:'Especialidad: Neumáticos',Lunas:'Especialidad: Lunas',
+  Electrico:'Especialidad: Eléctrico/EV',ADAS:'Especialidad: ADAS',
+};
+
+// ── Nominatim: coords + dirección ──
+async function nominatimSearch(t){
+  const q=[t.Nombre,t.Municipio,t.Provincia,t.Pais].filter(Boolean).join(' ');
+  const url='https://nominatim.openstreetmap.org/search?format=json&limit=3&addressdetails=1&q='+encodeURIComponent(q);
+  const r=await fetch(url); return (await r.json())[0]||null;
+}
+
+// ── Overpass: datos OSM completos ──
+async function overpassSearch(t){
+  const lat=parseFloat(t.Lat),lng=parseFloat(t.Lng);
+  if(!lat||!lng||isNaN(lat)) return null;
+  const name=t.Nombre.replace(/[.+*?^${}()|[\]\\]/g,'\\$&').replace(/"/g,"'").substring(0,50);
+  const query=`[out:json][timeout:20];(
+    node["name"~"${name}",i](around:3000,${lat},${lng});
+    way["name"~"${name}",i](around:3000,${lat},${lng});
+  );out body;`;
+  const r=await fetch('https://overpass-api.de/api/interpreter',{method:'POST',body:query});
+  const data=await r.json();
+  if(!data.elements?.length) return null;
+  return data.elements.find(e=>e.tags&&['car_repair','car_parts','tyres','car_wash'].includes(e.tags.amenity||e.tags.shop))||data.elements[0];
+}
+
+// ── SIRENE (France) — SIRET gratuito via data.gouv.fr ──
+async function sireneSearch(t){
+  if(t.Pais!=='Francia'&&t.Pais!=='France') return null;
+  const q=encodeURIComponent(t.Nombre);
+  // NAF 45.20Z = entretien et réparation de véhicules automobiles
+  const url=`https://recherche-entreprises.api.gouv.fr/search?q=${q}&activite_principale=45.20Z&page=1&per_page=3`;
+  const r=await fetch(url);
+  const data=await r.json();
+  const results=data.results||[];
+  if(!results.length) return null;
+  // Match by city if available
+  const city=(t.Municipio||'').toLowerCase();
+  const best=results.find(e=>(e.siege?.libelle_commune||'').toLowerCase().includes(city))||results[0];
+  return best;
+}
+
+// ── OpenCorporates — datos registrales ES/PT ──
+async function openCorporatesSearch(t){
+  const jmap={España:'es',Portugal:'pt',France:'fr',Francia:'fr'};
+  const jur=jmap[t.Pais]||'';
+  if(!jur||!t.Nombre) return null;
+  const url=`https://api.opencorporates.com/v0.4/companies/search?q=${encodeURIComponent(t.Nombre)}&jurisdiction_code=${jur}&fields=company_number,name,registered_address`;
+  try{
+    const r=await fetch(url);
+    const data=await r.json();
+    const companies=data?.results?.companies||[];
+    return companies[0]?.company||null;
+  }catch(e){return null;}
+}
+
+// ── Mapeo de tags OSM → especialidades Mobius ──
+function mapOSMSpecialties(tags){
+  const specs={};
+  // Direct service tags
+  if(tags['service:vehicle:tyres']==='yes'||tags['amenity']==='tyres') specs.Neumaticos='SI';
+  if(tags['service:vehicle:glass']==='yes'||tags['repair']==='glass') specs.Lunas='SI';
+  if(tags['service:vehicle:body_repair']==='yes'||tags['amenity']==='body_shop') specs.Carroceria='SI';
+  if(tags['service:vehicle:painting']==='yes'||tags['amenity']==='car_painting') specs.Pintura='SI';
+  if(tags['service:vehicle:oil_change']==='yes'||tags['service:vehicle:brakes']==='yes'||
+     tags['service:vehicle:engine']==='yes'||tags['service:vehicle:transmission']==='yes'||
+     tags['service:vehicle:suspension']==='yes'||tags['amenity']==='car_repair') specs.Mec_Ligera='SI';
+  if(tags['service:vehicle:heavy_vehicles']==='yes'||tags['hgv']==='yes') specs.Mec_Pesada='SI';
+  if(tags['service:vehicle:electric']==='yes'||tags['car:electric']||tags['ev:charging']) specs.Electrico='SI';
+  // ADAS, alignment
+  if(tags['service:vehicle:alignment']==='yes') specs.Neumaticos='SI';
+  // Shop type shortcuts
+  if(tags.shop==='tyres') specs.Neumaticos='SI';
+  if(tags.shop==='car_parts') specs.Mec_Ligera='SI';
+  return specs;
+}
+
+// ── FUNCIÓN PRINCIPAL ──
+async function enrichTaller(id){
+  if(!id){showToast('Abre una ficha de taller primero','error');return;}
+  _enrichTallerId=id;
+  const t=DATA.find(r=>r.ID===id);
+  if(!t){showToast('Taller no encontrado','error');return;}
+
+  // Compute flags FIRST before using them
+  const aiActive=APP_SETTINGS.use_ai&&!!APP_SETTINGS.openai_api_key;
+  const modelHasSearch=(APP_SETTINGS.openai_model||'').includes('search');
+
+  // Show loading overlay
+  document.getElementById('enrich-title').textContent='🔍 Buscando información…';
+  document.getElementById('enrich-sub').textContent=t.Nombre;
+  const aiLabel=aiActive?' · <strong style="color:#7C3AED">IA: '+APP_SETTINGS.openai_model+'</strong>':'';
+  const warnHtml=aiActive&&!modelHasSearch
+    ?'<div style="margin-top:8px;padding:6px 10px;background:#FEF3C7;border-radius:6px;font-size:10px;color:#92400E;font-weight:700">⚠ '+APP_SETTINGS.openai_model+' no busca en internet — puede inventar datos. Usa <u>gpt-4o-search-preview</u> en Configuración.</div>'
+    :'';
+  document.getElementById('enrich-body').innerHTML=
+    '<div class="enrich-loading">⏳ Consultando '+(aiActive?'5':'4')+' fuentes de datos…<br>'
+    +'<span style="font-size:10px;color:var(--gray-300)">Nominatim · OpenStreetMap · SIRENE · OpenCorporates'+aiLabel+'</span>'
+    +warnHtml+'</div>';
+  document.getElementById('enrichOverlay').classList.add('open');
+  document.getElementById('enrich-apply-btn').disabled=true;
+  const btn=document.getElementById('btn-enrich');
+  if(btn){btn.disabled=true;btn.textContent='⏳…';}
+
+  _enrichSuggestions={};_enrichSources={};
+
+  const [nomRes,osmRes,sireneRes,ocRes,aiRes]=await Promise.allSettled([
+    nominatimSearch(t), overpassSearch(t), sireneSearch(t), openCorporatesSearch(t),
+    aiActive?aiEnrichSearch(t):Promise.resolve(null)
+  ]);
+
+  // ── 1. Nominatim ──
+  if(nomRes.status==='fulfilled'&&nomRes.value){
+    const n=nomRes.value, addr=n.address||{};
+    // Verificar coherencia coords vs dirección
+    await checkCoordsVsCP(t, n);
+    const nLat=parseFloat(n.lat).toFixed(6), nLng=parseFloat(n.lon).toFixed(6);
+    if(!t.Lat||!t.Lng||Math.abs(parseFloat(t.Lat)-parseFloat(n.lat))>0.005||Math.abs(parseFloat(t.Lng)-parseFloat(n.lon))>0.005){
+      _suggest('Lat',nLat,'Nominatim'); _suggest('Lng',nLng,'Nominatim');
+    }
+    _suggestIfEmpty('CP',addr.postcode,t,'Nominatim');
+    _suggestIfEmpty('Municipio',addr.city||addr.town||addr.village||addr.municipality,t,'Nominatim');
+    _suggestIfEmpty('Provincia',addr.state||addr.county,t,'Nominatim');
+    _suggestIfEmpty('Distrito',addr.state_district||addr.region,t,'Nominatim');
+    const street=[addr.road||'',addr.house_number||''].filter(Boolean).join(' ');
+    _suggestIfEmpty('Direccion',street,t,'Nominatim');
+  }
+
+  // ── 2. Overpass/OSM ──
+  if(osmRes.status==='fulfilled'&&osmRes.value){
+    const el=osmRes.value, tags=el.tags||{};
+    // Contact fields
+    _suggestIfEmpty('Telefono_Fijo',tags.phone||tags['contact:phone'],t,'OpenStreetMap');
+    _suggestIfEmpty('Telefono_Movil',tags['contact:mobile']||tags.mobile,t,'OpenStreetMap');
+    _suggestIfEmpty('Web',tags.website||tags['contact:website'],t,'OpenStreetMap');
+    _suggestIfEmpty('Email',tags.email||tags['contact:email'],t,'OpenStreetMap');
+    _suggestIfEmpty('Horario',tags.opening_hours,t,'OpenStreetMap');
+    // Capacity
+    const cap=tags['capacity:cars']||tags.capacity;
+    if(cap&&!isNaN(parseInt(cap)))_suggestIfEmpty('Capacidad_Diaria',parseInt(cap).toString(),t,'OpenStreetMap');
+    // Chain/brand
+    _suggestIfEmpty('Cadena',tags.brand||tags.operator||tags.network,t,'OpenStreetMap');
+    // Legal name
+    _suggestIfEmpty('Razon_Social',tags.official_name||tags['name:legal'],t,'OpenStreetMap');
+    // Languages
+    const lang=tags['contact:lang']||tags['service:languages']||tags.language;
+    _suggestIfEmpty('Idiomas',lang,t,'OpenStreetMap');
+    // Precise coordinates from OSM node (more accurate than Nominatim)
+    if(el.lat&&el.lon&&(!t.Lat||!t.Lng)){
+      _suggest('Lat',el.lat.toFixed(6),'OSM (exacto)');
+      _suggest('Lng',el.lon.toFixed(6),'OSM (exacto)');
+    }
+    // Specialties
+    const specs=mapOSMSpecialties(tags);
+    for(const [sp,val] of Object.entries(specs)){
+      if(t[sp]!=='SI') {_enrichSuggestions[sp]=val; _enrichSources[sp]='OSM (servicio)';}
+    }
+  }
+
+  // ── 3. SIRENE (Francia) ──
+  if(sireneRes.status==='fulfilled'&&sireneRes.value){
+    const s=sireneRes.value;
+    const siret=s.siege?.siret||s.siren||'';
+    _suggestIfEmpty('CIF_NIF',siret,t,'SIRENE/INSEE (oficial FR)');
+    _suggestIfEmpty('Razon_Social',s.nom_complet||s.nom_raison_sociale,t,'SIRENE/INSEE');
+    const addr=s.siege||{};
+    _suggestIfEmpty('Direccion',[addr.numero_voie||'',addr.type_voie||'',addr.libelle_voie||''].filter(Boolean).join(' '),t,'SIRENE');
+    _suggestIfEmpty('CP',addr.code_postal||addr.cedex,t,'SIRENE');
+    _suggestIfEmpty('Municipio',addr.libelle_commune,t,'SIRENE');
+  }
+
+  // ── 4. OpenCorporates ──
+  if(ocRes.status==='fulfilled'&&ocRes.value){
+    const oc=ocRes.value;
+    _suggestIfEmpty('CIF_NIF',oc.company_number,t,'OpenCorporates');
+    _suggestIfEmpty('Razon_Social',oc.name,t,'OpenCorporates');
+    const ra=oc.registered_address;
+    if(ra){
+      _suggestIfEmpty('Direccion',[ra.street_address,ra.locality].filter(Boolean).join(', '),t,'OpenCorporates');
+      _suggestIfEmpty('CP',ra.postal_code,t,'OpenCorporates');
+      _suggestIfEmpty('Municipio',ra.locality,t,'OpenCorporates');
+    }
+  }
+
+  // ── 5. OpenAI AI enrichment ──
+  if(aiRes&&aiRes.status==='fulfilled'&&aiRes.value){
+    const ai=aiRes.value;
+    const specFields=['Carroceria','Pintura','Mec_Ligera','Mec_Pesada','Neumaticos','Lunas','Electrico','ADAS'];
+    for(const [field,val] of Object.entries(ai)){
+      if(!val||String(val).trim()==='') continue;
+      const v=String(val).trim();
+      if(specFields.includes(field)){
+        // Specialties: only suggest SI (never overwrite SI with NO)
+        if(v.toUpperCase()==='SI') { _enrichSuggestions[field]='SI'; _enrichSources[field]='IA (OpenAI)'; }
+      } else {
+        // ALL other fields: always show AI suggestion so user can verify/accept
+        // AI overwrites free-API suggestions (AI is more specific)
+        _enrichSuggestions[field]=v; _enrichSources[field]='IA (OpenAI)';
+      }
+    }
+  } else if(aiRes&&aiRes.status==='rejected'){
+    console.warn('AI enrichment error:',aiRes.reason);
+    showToast('⚠ IA: '+String(aiRes.reason).substring(0,60),'error');
+  }
+
+  if(btn){btn.disabled=false;btn.textContent='🔍 Buscar info';}
+  renderEnrichResults(t);
+}
+
+function _suggest(field,val,src){
+  if(!val||String(val).trim()==='') return;
+  _enrichSuggestions[field]=String(val).trim();
+  _enrichSources[field]=src;
+}
+function _suggestIfEmpty(field,val,t,src){
+  if(!val||String(val).trim()==='') return;
+  if(t[field]&&String(t[field]).trim()!=='') return; // Don't overwrite existing
+  _suggest(field,String(val).trim(),src);
+}
+
+function renderEnrichResults(t){
+  const keys=Object.keys(_enrichSuggestions);
+  document.getElementById('enrich-title').textContent='🔍 Resultados de búsqueda';
+  document.getElementById('enrich-sub').textContent=t.Nombre+' · '+keys.length+' campo(s) con datos encontrados';
+
+  // Groups: show ALL fields, found AND not found
+  const groups=[
+    {label:'📍 Ubicación y contacto', fields:['Lat','Lng','Direccion','CP','Municipio','Provincia','Distrito','Telefono_Fijo','Telefono_Movil','Email','Web','Horario']},
+    {label:'🏢 Datos empresa', fields:['Razon_Social','CIF_NIF','Cadena','Idiomas','Capacidad_Diaria','Rating']},
+    {label:'🔧 Especialidades', fields:['Carroceria','Pintura','Mec_Ligera','Mec_Pesada','Neumaticos','Lunas','Electrico','ADAS']},
+  ];
+
+  let html='';
+  for(const grp of groups){
+    // Check if any field in this group has data
+    const hasData=grp.fields.some(f=>_enrichSuggestions[f]!==undefined);
+    const grpId=grp.label.replace(/[^a-z]/gi,'');
+    html+=`<div style="font-size:10px;font-weight:800;font-family:'Montserrat',sans-serif;color:var(--gray-400);text-transform:uppercase;letter-spacing:.5px;padding:10px 0 4px;border-top:1px solid var(--gray-100);margin-top:4px">${grp.label}</div>`;
+    html+=`<table class="enrich-table"><thead><tr>
+      <th style="width:28px"><input type="checkbox" id="grpall_${grpId}" checked
+        onchange="this.closest('table').querySelectorAll('input[type=checkbox]').forEach(c=>c.checked=this.checked)"></th>
+      <th>Campo</th><th>Valor actual</th><th>Resultado</th><th>Fuente</th>
+    </tr></thead><tbody>`;
+
+    for(const field of grp.fields){
+      const cur=t[field]||'';
+      const sug=_enrichSuggestions[field];
+      const found=sug!==undefined;
+      const isNew=found&&!cur;
+      const sameVal=found&&cur&&cur===sug;
+      const isDiff=found&&cur&&cur!==sug;
+      const srcLabel=_enrichSources[field]||'';
+      const isAI=srcLabel.includes('OpenAI');
+
+      let badge, valHtml, rowCls='';
+      if(!found){
+        badge='<span class="enrich-badge-missing">No encontrado</span>';
+        valHtml='<span style="color:var(--gray-300);font-size:11px;font-style:italic">—</span>';
+        rowCls=' class="enrich-row-missing"';
+      } else if(sameVal){
+        badge='<span class="enrich-badge-ok">✓ Confirma</span>';
+        valHtml=`<span class="enrich-val-new" style="color:#059669">${sug}</span>`;
+      } else if(isNew){
+        badge=isAI?'<span class="enrich-badge-ai">IA · Nuevo</span>':'<span class="enrich-badge-new">Nuevo</span>';
+        valHtml=`<span class="enrich-val-new">${sug}</span>`;
+      } else {
+        badge=isAI?'<span class="enrich-badge-ai">IA · Cambio</span>':'<span class="enrich-badge-change">Cambio</span>';
+        valHtml=`<span class="enrich-val-change">${sug}</span>`;
+      }
+
+      html+=`<tr${rowCls}>
+        <td><input type="checkbox" id="ech_${field}" ${found&&!sameVal?'checked':''}  ${!found?'disabled':''}></td>
+        <td><label for="ech_${field}" style="cursor:pointer;font-weight:600;font-family:'Montserrat',sans-serif;font-size:11px;${!found?'color:var(--gray-300)':''}">${ENRICH_LABELS[field]||field}</label>${badge}</td>
+        <td style="color:var(--gray-400);font-size:11px;max-width:140px;word-break:break-all">${cur||'—'}</td>
+        <td style="font-size:11px;max-width:180px;word-break:break-all">${valHtml}</td>
+        <td style="font-size:9px;color:var(--gray-300)">${srcLabel}</td>
+      </tr>`;
+    }
+    html+='</tbody></table>';
+  }
+
+  // Warning for non-search model
+  const mdl=APP_SETTINGS.openai_model||'';
+  const hasAIResults=Object.values(_enrichSources).some(s=>s.includes('OpenAI'));
+  if(hasAIResults&&!mdl.includes('search')){
+    html+=`<div style="padding:10px 14px;background:#FEF3C7;border-top:1px solid #FDE68A;font-size:11px;color:#92400E;font-weight:600;font-family:Montserrat,sans-serif;margin-top:10px;border-radius:6px">
+      ⚠ Datos con badge <span style="background:#EDE9FE;color:#5B21B6;padding:1px 6px;border-radius:4px;font-size:10px">IA</span> vienen de <strong>${mdl}</strong> sin búsqueda web — verifica antes de aplicar. Para mayor precisión usa <u>gpt-4o-search-preview</u>.
+    </div>`;
+  }
+
+  document.getElementById('enrich-body').innerHTML=html;
+  document.getElementById('enrich-apply-btn').disabled=keys.length===0;
+}
+
+function applyEnrichment(){
+  const t=DATA.find(r=>r.ID===_enrichTallerId);
+  if(!t) return;
+  let applied=0;
+  Object.keys(_enrichSuggestions).forEach(field=>{
+    const chk=document.getElementById('ech_'+field);
+    if(chk&&chk.checked){t[field]=_enrichSuggestions[field];applied++;}
+  });
+  const stamp='Actualizado: '+new Date().toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric'});
+  t.Notas=(t.Notas||'').replace(/Actualizado:[^·]*/,'').replace(/·\s*$/,'').trim();
+  t.Notas=t.Notas?(t.Notas+' · '+stamp):stamp;
+  t.Fecha_Alta=new Date().toISOString().slice(0,10);
+  clearScoreCache();pendingChanges++;saveToStorage();populateSelects();renderAll();
+  closeEnrich();openModal(_enrichTallerId);
+  showToast(applied+' campo(s) actualizados','success');
+}
+
+function closeEnrich(){document.getElementById('enrichOverlay').classList.remove('open');}
+
+
+// ══════════════════════════════════════════════════════
+// SETTINGS & AI ENRICHMENT
+// ══════════════════════════════════════════════════════
+
+function loadAppSettings(){
+  try{const s=localStorage.getItem(SETTINGS_KEY);if(s)APP_SETTINGS={...APP_SETTINGS,...JSON.parse(s)};}catch(e){}
+}
+function saveAppSettings(){localStorage.setItem(SETTINGS_KEY,JSON.stringify(APP_SETTINGS));}
+function openSettings(){
+  document.getElementById('cfg-openai-key').value=APP_SETTINGS.openai_api_key||'';
+  document.getElementById('cfg-openai-model').value=APP_SETTINGS.openai_model||'gpt-4o-mini';
+  document.getElementById('cfg-use-ai').checked=APP_SETTINGS.use_ai||false;
+  document.getElementById('cfg-gh-owner').value=APP_SETTINGS.gh_owner||'';
+  document.getElementById('cfg-gh-repo').value=APP_SETTINGS.gh_repo||'';
+  document.getElementById('cfg-gh-path').value=APP_SETTINGS.gh_path||'';
+  document.getElementById('cfg-gh-author').value=APP_SETTINGS.gh_author||'';
+  document.getElementById('cfg-gh-token').value=APP_SETTINGS.gh_token||'';
+  previewKey(APP_SETTINGS.openai_api_key||'');
+  document.getElementById('settingsOverlay').classList.add('open');
+}
+function closeSettings(){document.getElementById('settingsOverlay').classList.remove('open');}
+function saveSettingsAndClose(){
+  APP_SETTINGS.openai_api_key=document.getElementById('cfg-openai-key').value.trim();
+  APP_SETTINGS.openai_model=document.getElementById('cfg-openai-model').value;
+  APP_SETTINGS.use_ai=document.getElementById('cfg-use-ai').checked;
+  APP_SETTINGS.gh_owner=document.getElementById('cfg-gh-owner').value.trim();
+  APP_SETTINGS.gh_repo=document.getElementById('cfg-gh-repo').value.trim();
+  APP_SETTINGS.gh_path=document.getElementById('cfg-gh-path').value.trim();
+  APP_SETTINGS.gh_author=document.getElementById('cfg-gh-author').value.trim();
+  APP_SETTINGS.gh_token=document.getElementById('cfg-gh-token').value.trim();
+  saveAppSettings();closeSettings();
+  ghInit(); // Actualizar barra de estado GitHub
+  showToast('Configuración guardada','success');
+}
+function toggleKeyVisibility(){
+  const inp=document.getElementById('cfg-openai-key'),btn=document.getElementById('btn-toggle-key');
+  inp.type=inp.type==='password'?'text':'password';
+  btn.textContent=inp.type==='password'?'👁 Ver':'🙈 Ocultar';
+}
+function previewKey(val){
+  const el=document.getElementById('key-status');if(!el)return;
+  if(!val){el.textContent='Sin API key — solo fuentes gratuitas';el.style.color='var(--gray-400)';return;}
+  if(val.startsWith('sk-')){el.textContent='✓ Formato válido';el.style.color='#059669';}
+  else{el.textContent='⚠ La key debería empezar por sk-';el.style.color='#D97706';}
+}
+async function aiEnrichSearch(t){
+  if(!APP_SETTINGS.use_ai||!APP_SETTINGS.openai_api_key) return null;
+
+  const existing=Object.entries({
+    Direccion:t.Direccion,CP:t.CP,Municipio:t.Municipio,Provincia:t.Provincia,
+    Distrito:t.Distrito,Lat:t.Lat,Lng:t.Lng,
+    Telefono_Fijo:t.Telefono_Fijo,Telefono_Movil:t.Telefono_Movil,
+    Web:t.Web,Email:t.Email,CIF_NIF:t.CIF_NIF,Cadena:t.Cadena
+  }).filter(([,v])=>v&&String(v).trim()).map(([k,v])=>k+': '+v).join('\n');
+
+  const prompt=
+    'Busca información sobre este taller de automóviles y devuelve un JSON completo.\n\n'+
+    'TALLER:\n'+
+    'Nombre: '+t.Nombre+'\n'+
+    'País: '+(t.Pais||'')+'\n'+
+    (t.Municipio?'Ciudad: '+t.Municipio+'\n':'')+
+    (t.Provincia?'Provincia/Región: '+t.Provincia+'\n':'')+
+    (t.Direccion?'Dirección conocida: '+t.Direccion+'\n':'')+
+    (t.CP?'CP: '+t.CP+'\n':'')+
+    (t.Lat&&t.Lng?'Coordenadas actuales: '+t.Lat+', '+t.Lng+'\n':'')+
+    (existing?'Datos actuales (verificar y completar):\n'+existing+'\n':'')+
+    '\nDEVUELVE un JSON con TODOS estos campos (rellena los que puedas encontrar):\n'+
+    '{\n'+
+    '  "CIF_NIF": "NIF/CIF si es España (formato B12345678 o 12345678A), NIF 9 dígitos si es Portugal, SIRET 14 dígitos si es Francia",\n'+
+    '  "Razon_Social": "denominación social legal completa",\n'+
+    '  "Telefono_Fijo": "teléfono con prefijo internacional (ej: +34 91 123 4567)",\n'+
+    '  "Telefono_Movil": "móvil con prefijo internacional (ej: +34 612 345 678)",\n'+
+    '  "Web": "URL completa (https://...)",\n'+
+    '  "Email": "email de contacto",\n'+
+    '  "Horario": "horario completo (ej: Lun-Vie 8:30-18h, Sáb 9-14h)",\n'+
+    '  "Rating": "valoración Google Maps real con decimales (ej: 4.3). Si no hay valoración, pon 0.",\n'+
+    '  "Cadena": "nombre de cadena/franquicia o Independiente",\n'+
+    '  "Idiomas": "idiomas hablados separados por ; (ej: ES;EN;PT)",\n'+
+    '  "Capacidad_Diaria": "número estimado de vehículos que puede atender por día",\n'+
+    '  "Direccion": "dirección postal completa y correcta",\n'+
+    '  "CP": "código postal correcto para ese municipio y país",\n'+
+    '  "Municipio": "ciudad o municipio correcto",\n'+
+    '  "Provincia": "provincia o departamento correcto",\n'+
+    '  "Distrito": "distrito o región (si aplica al país)",\n'+
+    '  "Lat": "latitud decimal precisa del taller (ej: 40.4168)",\n'+
+    '  "Lng": "longitud decimal precisa del taller (ej: -3.7038)",\n'+
+    '  "Carroceria": "SI si hacen chapa/carrocería como servicio principal, NO si no",\n'+
+    '  "Pintura": "SI si hacen pintura de vehículos como servicio principal, NO si no",\n'+
+    '  "Mec_Ligera": "SI si hacen mecánica general/mantenimiento/revisiones, NO si no",\n'+
+    '  "Mec_Pesada": "SI si trabajan con vehículos industriales >3.5t, NO si no",\n'+
+    '  "Neumaticos": "SI si venden/montan/equilibran neumáticos, NO si no",\n'+
+    '  "Lunas": "SI si sustituyen/reparan lunas/parabrisas, NO si no",\n'+
+    '  "Electrico": "SI si trabajan con vehículos eléctricos/híbridos, NO si no",\n'+
+    '  "ADAS": "SI si calibran sistemas de asistencia a la conducción, NO si no"\n'+
+    '}\n\n'+
+    'REGLAS CRÍTICAS:\n'+
+    '1. Si no tienes datos VERIFICADOS y REALES sobre este taller, NO inventes nada. Omite ese campo.\n'+
+    '2. NO uses datos genéricos ni de ejemplo (ej: 912345678, info@empresa.com, B12345678).\n'+
+    '3. COORDENADAS: comprueba que las coordenadas Lat/Lng corresponden con la dirección, municipio y CP del taller. Si los datos de ubicación son inconsistentes entre sí (ej: CP de Madrid pero coordenadas en Sevilla), determina las coordenadas correctas en función de la dirección y municipio y corrígelas.\n'+
+    '4. ESPECIALIDADES: sé estricto. Solo marca SI si el taller ofrece ese servicio como actividad principal confirmada. Busca confirmación real (web, reseñas, directorios).\n'+
+    '5. Es preferible devolver {} a devolver datos inventados.\n'+
+    '6. Solo JSON válido, sin markdown, sin texto adicional.';
+
+  const r=await fetch('https://api.openai.com/v1/chat/completions',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+APP_SETTINGS.openai_api_key},
+    body:JSON.stringify({
+      model:APP_SETTINGS.openai_model||'gpt-4o-search-preview',
+      max_tokens:1200,
+      messages:[
+        {role:'system',content:'Eres un asistente especializado en datos de talleres de automóviles europeos. Buscas información real y verificada. Devuelves SOLO JSON válido, sin markdown, sin texto adicional.'},
+        {role:'user',content:prompt}
+      ]
+    })
+  });
+  const data=await r.json();
+  if(data.error) throw new Error(data.error.message);
+  return JSON.parse((data.choices?.[0]?.message?.content||'{}').replace(/```json|```/g,'').trim());
+}
+document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key===','){e.preventDefault();openSettings();}});
+loadAppSettings();
+
+
+// ── COMMENTS / SEGUIMIENTO ──
+function renderComments(t){
+  const el=document.getElementById('seg-history');
+  if(!el) return;
+  let items=[];
+  try{ if(t.Comentarios) items=JSON.parse(t.Comentarios); }catch(e){}
+  if(!items.length){
+    el.innerHTML='<div class="no-comments">Sin comentarios todavía.<br>Usa el formulario superior para añadir el primero.</div>';
+    return;
+  }
+  el.innerHTML=[...items].reverse().map((c,i)=>`
+    <div class="comment-item">
+      <div class="comment-meta">
+        <span class="comment-autor">👤 ${c.a||'Anónimo'}</span>
+        <span class="comment-fecha">${c.f||''}</span>
+        ${i===0?'<span class="comment-badge">ÚLTIMO</span>':''}
+      </div>
+      <div class="comment-texto">${(c.t||'').replace(/\n/g,'<br>')}</div>
+    </div>`).join('');
+}
+
+function addComment(){
+  if(!editingId){ showToast('Abre la ficha en modo edición o guarda el taller primero','error'); return; }
+  const autor=document.getElementById('f-seg-autor')?.value?.trim();
+  const texto=document.getElementById('f-seg-texto')?.value?.trim();
+  if(!autor){ showToast('Indica tu nombre','error'); return; }
+  if(!texto){ showToast('Escribe un comentario','error'); return; }
+
+  const t=DATA.find(r=>r.ID===editingId);
+  if(!t){ showToast('Taller no encontrado','error'); return; }
+
+  let items=[];
+  try{ if(t.Comentarios) items=JSON.parse(t.Comentarios); }catch(e){}
+
+  const now=new Date();
+  const fecha=now.toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric'})
+    +' '+now.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+  items.push({a:autor,t:texto,f:fecha});
+  t.Comentarios=JSON.stringify(items);
+
+  // Clear form
+  document.getElementById('f-seg-texto').value='';
+  // Re-render
+  renderComments(t);
+  pendingChanges++;
+  saveToStorage();
+  showToast('Comentario añadido','success');
+}
+
+
+// ── CONTACT ACTIONS ──
+function contactAction(type){
+  const tel=document.getElementById('f-tel-fijo')?.value?.replace(/\s/g,'')||'';
+  const mov=document.getElementById('f-tel-mov')?.value?.replace(/\s/g,'')||'';
+  const wa=document.getElementById('f-whatsapp')?.value?.replace(/[^\d+]/g,'')||'';
+  const email=document.getElementById('f-email')?.value||'';
+  const web=document.getElementById('f-web')?.value||'';
+  if(type==='call'&&tel){window.open('tel:'+tel,'_self');}
+  else if(type==='callmov'&&mov){window.open('tel:'+mov,'_self');}
+  else if(type==='sms'&&tel){window.open('sms:'+tel,'_self');}
+  else if(type==='whatsapp'&&wa){window.open('https://wa.me/'+wa.replace('+',''),'_blank');}
+  else if(type==='email'&&email){window.open('mailto:'+email,'_blank');}
+  else if(type==='web'&&web){window.open(web.startsWith('http')?web:'https://'+web,'_blank');}
+  else showToast('No hay dato disponible para esta acción','error');
+}
+
+function setUltimoContactoNow(){
+  const now=new Date();
+  const local=now.toISOString().slice(0,16); // datetime-local format
+  document.getElementById('f-ultimo-contacto').value=local;
+  updateUltimoContactoLabel(local);
+}
+
+function updateUltimoContactoLabel(val){
+  const el=document.getElementById('ultimo-contacto-label');
+  if(!el) return;
+  if(!val){el.textContent='Sin contacto registrado';el.style.color='var(--gray-300)';}
+  else{
+    const d=new Date(val);
+    el.textContent='Último: '+d.toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric'})+' '+d.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+    el.style.color='var(--teal-d)';
+  }
+}
+
+// ── EXIT EDIT MODE (back to visualización) ──
+function exitEditMode(id){
+  isEditMode=false;
+  // Update mode bar
+  const pill=document.getElementById('mode-pill');
+  const hint=document.getElementById('mode-hint');
+  if(pill){pill.className='mode-pill view';pill.textContent='👁 Visualización';}
+  if(hint) hint.textContent='Solo lectura · Pulsa Editar para modificar';
+  document.getElementById('mode-bar').className='mode-bar view';
+  document.getElementById('btn-edit-mode').style.display='';
+  document.getElementById('btn-enrich').style.display='';
+  document.getElementById('actions-view').style.display='flex';
+  document.getElementById('actions-edit').style.display='none';
+  // Re-open in view mode to refresh fields
+  if(id) openModal(id);
+}
+
+// ── COORDINATE COHERENCE CHECK (during enrichment) ──
+async function checkCoordsVsCP(t, nominatimResult){
+  if(!nominatimResult||!t.Lat||!t.Lng||!t.CP) return;
+  const nomLat=parseFloat(nominatimResult.lat);
+  const nomLng=parseFloat(nominatimResult.lon);
+  const tLat=parseFloat(t.Lat);
+  const tLng=parseFloat(t.Lng);
+  const dist=Math.sqrt(Math.pow(nomLat-tLat,2)+Math.pow(nomLng-tLng,2));
+  // Flag if coords differ by more than ~15km (0.15 degrees)
+  if(dist>0.15){
+    t.Coords_OK='0'; // flag mismatch
+    // Suggest correct coords
+    _suggest('Lat',nomLat.toFixed(6),'Nominatim (coord verificada vs CP)');
+    _suggest('Lng',nomLng.toFixed(6),'Nominatim (coord verificada vs CP)');
+  } else {
+    t.Coords_OK='1'; // verified OK
+  }
+}
+
+
+// ══════════════════════════════════════════════════════
+// MÓDULO GITHUB — Almacenamiento colaborativo
+// ══════════════════════════════════════════════════════
+let _ghSha = null;          // SHA del fichero al cargarlo (para detectar conflictos)
+let _ghLoadedAt = null;     // Timestamp de última carga desde GitHub
+
+// ── Helpers de encoding UTF-8 ↔ base64 ──
+function utf8ToB64(str){
+  // TextEncoder handles all Unicode correctly (Spanish, French, Portuguese, etc.)
+  const bytes=new TextEncoder().encode(str);
+  let bin=''; bytes.forEach(b=>bin+=String.fromCharCode(b));
+  return btoa(bin);
+}
+function b64ToUtf8(str){
+  // Remove any whitespace GitHub inserts in base64 lines
+  const clean=str.replace(/[\s]/g,'');
+  const bin=atob(clean);
+  const bytes=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
+  return new TextDecoder('utf-8').decode(bytes);
+}
+
+// ── API base ──
+function ghHeaders(){
+  return {
+    'Authorization':'token '+APP_SETTINGS.gh_token,
+    'Accept':'application/vnd.github.v3+json',
+    'Content-Type':'application/json'
+  };
+}
+function ghUrl(){
+  const {gh_owner,gh_repo,gh_path}=APP_SETTINGS;
+  if(!gh_owner||!gh_repo||!gh_path) throw new Error('GitHub no configurado. Ve a ⚙️ Configuración.');
+  return `https://api.github.com/repos/${gh_owner}/${gh_repo}/contents/${gh_path}`;
+}
+
+// ── Estado visual ──
+function ghSetStatus(state, text, sha){
+  const bar=document.getElementById('gh-bar');
+  const dot=document.getElementById('gh-dot');
+  const txt=document.getElementById('gh-bar-text');
+  const shaEl=document.getElementById('gh-bar-sha');
+  if(bar) bar.style.display='flex';
+  if(dot){ dot.className='gh-dot '+state; }
+  if(txt) txt.textContent=text;
+  if(shaEl) shaEl.textContent=sha?'SHA: '+sha.slice(0,7):'';
+  // Mostrar botón Publicar si hay GitHub configurado
+  const pubBtn=document.getElementById('btn-gh-publish');
+  if(pubBtn) pubBtn.style.display=APP_SETTINGS.gh_token?'':'none';
+}
+
+// ── Inicializar estado al abrir ──
+function ghInit(){
+  if(!APP_SETTINGS.gh_token||!APP_SETTINGS.gh_owner||!APP_SETTINGS.gh_repo||!APP_SETTINGS.gh_path){
+    document.getElementById('gh-bar').style.display='none';
+    document.getElementById('btn-gh-publish').style.display='none';
+    return;
+  }
+  document.getElementById('btn-gh-publish').style.display='';
+  ghSetStatus('off','GitHub configurado · Datos aún no sincronizados');
+}
+
+// ── CARGAR desde GitHub ──
+async function ghLoad(){
+  const btn=document.getElementById('btn-gh-load');
+  if(btn){btn.disabled=true;btn.textContent='⏳ Cargando...';}
+  ghSetStatus('warn','Conectando con GitHub…','');
+  try{
+    const resp=await fetch(ghUrl(),{headers:ghHeaders()});
+    if(!resp.ok){
+      const err=await resp.json();
+      throw new Error(err.message||'Error '+resp.status);
+    }
+    const data=await resp.json();
+    _ghSha=data.sha;
+    _ghLoadedAt=new Date();
+    const label=APP_SETTINGS.gh_path.split('/').pop();
+    console.log('[GitHub] SHA:'+data.sha+' bytes:'+data.size);
+
+    let csvText='';
+    const b64=(data.content||'').replace(/[\s]/g,'');
+    if(b64.length>0){
+      // Fichero <1MB: contenido en línea como base64
+      csvText=b64ToUtf8(b64);
+      console.log('[GitHub] Modo inline OK, registros esperados>0');
+    } else {
+      // Fichero >1MB: usar Git Blobs API con el SHA del blob (sin límite hasta 100MB)
+      // data.sha es el SHA del blob, no el commit
+      console.log('[GitHub] Fichero grande (>1MB), usando Git Blobs API...');
+      const {gh_owner:o,gh_repo:r2,gh_token:tok}=APP_SETTINGS;
+      const blobUrl=`https://api.github.com/repos/${o}/${r2}/git/blobs/${data.sha}`;
+      const blobResp=await fetch(blobUrl,{headers:{
+        'Authorization':'token '+tok,
+        'Accept':'application/vnd.github.v3.raw'
+      }});
+      if(!blobResp.ok){
+        const errTxt=await blobResp.text();
+        throw new Error('Error blob ('+blobResp.status+'): '+errTxt.slice(0,100));
+      }
+      csvText=await blobResp.text();
+      console.log('[GitHub] Blob OK: '+csvText.length+' chars, primeras 100: '+csvText.slice(0,100));
+    }
+    // Cargar datos como si fuera un CSV local
+    applyLoadDirect(csvText, '🐙 '+label);
+    ghSetStatus('ok',
+      'Sincronizado desde GitHub · '+_ghLoadedAt.toLocaleString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}),
+      _ghSha);
+    showToast('CSV cargado desde GitHub ('+DATA.length+' talleres)','success');
+  }catch(e){
+    ghSetStatus('err','Error al cargar: '+e.message,'');
+    showToast('GitHub: '+e.message,'error');
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='🐙 Cargar';}
+  }
+}
+
+// ── PUBLICAR en GitHub ──
+async function ghPublish(){
+  if(!APP_SETTINGS.gh_token){showToast('Configura GitHub en ⚙️ Configuración','error');return;}
+  if(!DATA.length){showToast('No hay datos para publicar','error');return;}
+
+  const btn=document.getElementById('btn-gh-publish');
+  if(btn){btn.disabled=true;btn.textContent='⏳ Publicando...';}
+  ghSetStatus('warn','Verificando estado en GitHub…','');
+
+  try{
+    // 1. Obtener SHA actual del fichero remoto (detectar conflictos)
+    const check=await fetch(ghUrl(),{headers:ghHeaders()});
+    let remoteSha=null;
+    if(check.ok){
+      const remoteData=await check.json();
+      remoteSha=remoteData.sha;
+    } else if(check.status!==404){
+      throw new Error('Error al verificar: '+check.status);
+    }
+
+    // 2. Detectar conflicto: alguien publicó desde nuestra última carga
+    if(remoteSha&&_ghSha&&remoteSha!==_ghSha){
+      const msg=
+        '⚠️ CONFLICTO: El fichero en GitHub ha sido modificado por otra persona desde tu última carga.\n\n'+
+        'SHA remoto: '+remoteSha.slice(0,7)+'\n'+
+        'SHA tuyo:   '+_ghSha.slice(0,7)+'\n\n'+
+        '¿Qué quieres hacer?\n'+
+        '→ Pulsa CANCELAR para cargar primero los cambios remotos\n'+
+        '→ Pulsa ACEPTAR para sobrescribir con tus datos (perderás cambios remotos)';
+      if(!confirm(msg)){
+        if(btn){btn.disabled=false;btn.textContent='🐙 Publicar';}
+        ghSetStatus('warn','Conflicto detectado · Carga los cambios remotos primero',remoteSha);
+        return;
+      }
+    }
+
+    // 3. Generar CSV
+    const csvText=Papa.unparse(DATA,{columns:COLS,newline:'\n'});
+
+    // 4. Construir mensaje del commit
+    const author=APP_SETTINGS.gh_author||'Usuario Mobius';
+    const now=new Date().toLocaleString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    const msg=author+' · '+now+' · '+DATA.length+' talleres · '+pendingChanges+' cambio(s)';
+
+    // 5. PUT a GitHub
+    const body={
+      message:msg,
+      content:utf8ToB64(csvText),
+      committer:{name:author,email:'mobius-hub@saretec.com'}
+    };
+    if(remoteSha) body.sha=remoteSha; // necesario para actualizar (no crear nuevo)
+
+    const put=await fetch(ghUrl(),{
+      method:'PUT',
+      headers:ghHeaders(),
+      body:JSON.stringify(body)
+    });
+    if(!put.ok){
+      const err=await put.json();
+      throw new Error(err.message||'Error al publicar: '+put.status);
+    }
+    const result=await put.json();
+    _ghSha=result.content.sha;
+    _ghLoadedAt=new Date();
+    pendingChanges=0;
+    updateStats();
+
+    ghSetStatus('ok',
+      'Publicado por '+author+' · '+new Date().toLocaleString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}),
+      _ghSha);
+    showToast('✓ Publicado en GitHub. '+DATA.length+' talleres guardados para todo el equipo.','success');
+
+  }catch(e){
+    ghSetStatus('err','Error al publicar: '+e.message,'');
+    showToast('GitHub: '+e.message,'error');
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='🐙 Publicar';}
+  }
+}
+
+// ── PROBAR conexión desde Settings ──
+async function testGhConnection(){
+  const owner=document.getElementById('cfg-gh-owner').value.trim();
+  const repo=document.getElementById('cfg-gh-repo').value.trim();
+  const path=document.getElementById('cfg-gh-path').value.trim();
+  const token=document.getElementById('cfg-gh-token').value.trim();
+  const el=document.getElementById('gh-status');
+  if(!owner||!repo||!path||!token){el.textContent='⚠ Rellena todos los campos';el.style.color='#D97706';return;}
+  el.textContent='Probando…';el.style.color='var(--gray-400)';
+  try{
+    const url=`https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+    const resp=await fetch(url,{headers:{'Authorization':'token '+token,'Accept':'application/vnd.github.v3+json'}});
+    if(resp.ok){
+      el.textContent='✓ Conexión OK — fichero encontrado';el.style.color='#059669';
+    } else if(resp.status===404){
+      // Repo accessible but file doesn't exist yet — OK for first publish
+      const repoCheck=await fetch(`https://api.github.com/repos/${owner}/${repo}`,{headers:{'Authorization':'token '+token}});
+      if(repoCheck.ok){
+        el.textContent='✓ Repo accesible · El fichero aún no existe (se creará al publicar)';el.style.color='#059669';
+      } else {
+        el.textContent='✗ Repositorio no encontrado o sin acceso';el.style.color='#DC2626';
+      }
+    } else if(resp.status===401){
+      el.textContent='✗ Token inválido o sin permisos';el.style.color='#DC2626';
+    } else {
+      el.textContent='✗ Error '+resp.status;el.style.color='#DC2626';
+    }
+  }catch(e){
+    el.textContent='✗ Error de red: '+e.message;el.style.color='#DC2626';
+  }
+}
+
+// ── Toggle visibilidad token GitHub ──
+function toggleGhToken(){
+  const inp=document.getElementById('cfg-gh-token');
+  inp.type=inp.type==='password'?'text':'password';
+}
+
+// ── Avisar al cerrar si hay cambios sin publicar ──
+window.addEventListener('beforeunload',function(e){
+  if(pendingChanges>0&&APP_SETTINGS.gh_token&&APP_SETTINGS.gh_repo){
+    const msg='Tienes '+pendingChanges+' cambio(s) sin publicar en GitHub. Pulsa "🐙 Publicar" antes de cerrar para que el equipo vea tus cambios.';
+    e.preventDefault();
+    e.returnValue=msg;
+    return msg;
+  }
+});
+
+</script>
+
+<!-- ── ENRICH OVERLAY ── -->
+<div class="enrich-overlay" id="enrichOverlay" onclick="if(event.target===this)closeEnrich()">
+  <div class="enrich-modal">
+    <div class="enrich-head">
+      <div>
+        <div class="enrich-title" id="enrich-title">🔍 Información encontrada</div>
+        <div class="enrich-sub" id="enrich-sub"></div>
+      </div>
+      <button class="btn btn-outline" onclick="closeEnrich()" style="margin-left:auto">✕ Cerrar</button>
+    </div>
+    <div id="enrich-body" class="enrich-body"></div>
+    <div class="enrich-foot">
+      <label style="font-size:11px;color:var(--gray-400);font-family:'Montserrat',sans-serif;font-weight:600;">
+        Fuente: OpenStreetMap · Nominatim · IA OpenAI — Para mejores resultados usa <strong>gpt-4o-search-preview</strong> en Configuración
+      </label>
+      <div style="display:flex;gap:8px;margin-left:auto">
+        <button class="btn btn-outline" onclick="closeEnrich()">Cancelar</button>
+        <button class="btn btn-dark" id="enrich-apply-btn" onclick="applyEnrichment()">✓ Aplicar seleccionados</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ── SETTINGS MODAL ── -->
+<div class="settings-overlay" id="settingsOverlay" onclick="if(event.target===this)closeSettings()">
+  <div class="settings-modal">
+    <div class="enrich-head">
+      <div>
+        <div class="enrich-title">⚙️ Configuración</div>
+        <div class="enrich-sub">Mobius Network Hub</div>
+      </div>
+      <button class="btn btn-outline" onclick="closeSettings()" style="margin-left:auto">✕</button>
+    </div>
+    <div style="padding:20px;overflow-y:auto;flex:1">
+
+      <!-- AI Enrichment section -->
+      <div style="margin-bottom:24px">
+        <div style="font-family:'Montserrat',sans-serif;font-size:12px;font-weight:800;color:var(--dark);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px">🤖 Enriquecimiento con Inteligencia Artificial</div>
+        <div style="font-size:11px;color:var(--gray-400);margin-bottom:14px;line-height:1.5">
+          Con tu API key de OpenAI (ChatGPT), el botón <strong>🔍 Buscar info</strong> usará IA para encontrar NIF/CIF/SIRET,
+          rating, especialidades, teléfono, web y más datos del taller buscando en internet en tiempo real.
+        </div>
+
+        <div class="ff" style="margin-bottom:12px">
+          <label style="font-size:11px;font-weight:700;font-family:'Montserrat',sans-serif;color:var(--dark)">
+            API Key OpenAI
+            <span style="font-weight:400;color:var(--gray-400);margin-left:4px">(se guarda solo en tu navegador, nunca se envía a ningún servidor externo)</span>
+          </label>
+          <div style="display:flex;gap:6px;margin-top:6px">
+            <input type="password" id="cfg-openai-key" placeholder="sk-..." style="flex:1;padding:8px 12px;border:1px solid var(--gray-200);border-radius:var(--r);font-size:12px;font-family:'Inter',sans-serif" oninput="previewKey(this.value)">
+            <button class="btn btn-outline" onclick="toggleKeyVisibility()" id="btn-toggle-key" style="font-size:11px">👁 Ver</button>
+          </div>
+          <div id="key-status" style="font-size:10px;margin-top:4px;font-family:'Montserrat',sans-serif;font-weight:600"></div>
+        </div>
+
+        <div class="ff" style="margin-bottom:12px">
+          <label style="font-size:11px;font-weight:700;font-family:'Montserrat',sans-serif;color:var(--dark)">Modelo</label>
+          <select id="cfg-openai-model" style="margin-top:6px;width:100%;padding:7px 10px;border:1px solid var(--gray-200);border-radius:var(--r);font-size:12px;font-family:'Inter',sans-serif">
+            <option value="gpt-4o-search-preview">gpt-4o-search-preview — Búsqueda web real ⭐ RECOMENDADO</option>
+            <option value="gpt-5.4-mini">gpt-5.4-mini — Rápido y económico</option>
+            <option value="gpt-5.4">gpt-5.4 — Alta capacidad</option>
+            <option value="gpt-5.5">gpt-5.5 — Máxima inteligencia</option>
+            <option value="gpt-4o-mini">gpt-4o-mini — Económico (sin búsqueda web)</option>
+            <option value="gpt-4o">gpt-4o — Calidad alta (sin búsqueda web)</option>
+          </select>
+          <div style="font-size:10px;color:var(--gray-400);margin-top:4px">gpt-4o-mini: ~$0,001/búsqueda · gpt-4o: ~$0,01/búsqueda · search-preview: búsqueda web real</div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <input type="checkbox" id="cfg-use-ai" style="width:16px;height:16px">
+          <label for="cfg-use-ai" style="font-size:12px;font-family:'Montserrat',sans-serif;font-weight:600;cursor:pointer">Activar enriquecimiento con IA</label>
+        </div>
+        <div style="font-size:10px;color:var(--gray-400)">Si está desactivado, solo se usan fuentes gratuitas (Nominatim, OpenStreetMap, SIRENE).</div>
+      </div>
+
+      <hr style="border:none;border-top:1px solid var(--gray-100);margin:16px 0">
+
+      <!-- GitHub section -->
+      <div style="margin-bottom:20px">
+        <div style="font-family:'Montserrat',sans-serif;font-size:12px;font-weight:800;color:var(--dark);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px">🐙 GitHub — Almacenamiento compartido</div>
+        <div style="font-size:11px;color:var(--gray-400);margin-bottom:14px;line-height:1.5">
+          Guarda el CSV en un repositorio privado de GitHub. Cualquier usuario con el HTML y el token puede cargar los datos más recientes y publicar sus cambios. Requiere un <strong>Personal Access Token</strong> con permisos <code>repo</code>.
+        </div>
+        <div class="form-grid" style="margin-bottom:10px">
+          <div class="ff"><label style="font-size:11px;font-weight:700;font-family:'Montserrat',sans-serif">Owner (usuario u organización)</label>
+            <input type="text" id="cfg-gh-owner" placeholder="ej: mobius-group"></div>
+          <div class="ff"><label style="font-size:11px;font-weight:700;font-family:'Montserrat',sans-serif">Nombre del repositorio</label>
+            <input type="text" id="cfg-gh-repo" placeholder="ej: talleres-data"></div>
+        </div>
+        <div class="form-grid" style="margin-bottom:10px">
+          <div class="ff"><label style="font-size:11px;font-weight:700;font-family:'Montserrat',sans-serif">Ruta del fichero en el repo</label>
+            <input type="text" id="cfg-gh-path" placeholder="ej: data/talleres_mobius.csv"></div>
+          <div class="ff"><label style="font-size:11px;font-weight:700;font-family:'Montserrat',sans-serif">Tu nombre (para commits)</label>
+            <input type="text" id="cfg-gh-author" placeholder="ej: Carlos Coira"></div>
+        </div>
+        <div class="ff" style="margin-bottom:10px">
+          <label style="font-size:11px;font-weight:700;font-family:'Montserrat',sans-serif">Personal Access Token (PAT) <span style="color:var(--gray-300);font-weight:400">— github.com → Settings → Developer settings → Tokens</span></label>
+          <div style="display:flex;gap:6px;margin-top:6px">
+            <input type="password" id="cfg-gh-token" placeholder="ghp_..." style="flex:1">
+            <button class="btn btn-outline" onclick="toggleGhToken()" style="font-size:11px">👁 Ver</button>
+            <button class="btn btn-outline" onclick="testGhConnection()" style="font-size:11px">🔗 Probar</button>
+          </div>
+          <div id="gh-status" style="font-size:10px;margin-top:4px;font-family:'Montserrat',sans-serif;font-weight:600"></div>
+        </div>
+      </div>
+
+      <hr style="border:none;border-top:1px solid var(--gray-100);margin:16px 0">
+
+      <!-- About -->
+      <div style="font-size:10px;color:var(--gray-300);line-height:1.6">
+        <strong style="color:var(--gray-400)">Fuentes gratuitas siempre activas:</strong> Nominatim (OSM) · Overpass API · SIRENE/INSEE (FR) · OpenCorporates<br>
+        Las keys solo se usan para peticiones directas al servicio y nunca salen de tu navegador.
+      </div>
+    </div>
+    <div class="enrich-foot">
+      <button class="btn btn-outline" onclick="closeSettings()">Cancelar</button>
+      <button class="btn btn-dark" onclick="saveSettingsAndClose()">💾 Guardar configuración</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
