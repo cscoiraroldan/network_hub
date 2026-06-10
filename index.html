@@ -1143,7 +1143,21 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:var(--gray-50);c
 // ── STATE ──
 let DATA=[], activeTipo='todos', activeEstado='', selectedId=null, editingId=null, pendingChanges=0, isEditMode=false;
 const SETTINGS_KEY='mobius_settings_v1';
-let APP_SETTINGS={openai_api_key:'',openai_model:'gpt-4o-mini',use_ai:false,gh_token:'',gh_owner:'',gh_repo:'',gh_path:'talleres_mobius.csv',gh_author:''};
+// ── CONFIGURACIÓN POR DEFECTO ──
+// Edita estos valores para que cualquier usuario que abra el fichero
+// ya tenga la configuración base cargada.
+// ⚠ No incluyas aquí tokens ni API keys — cada usuario los introduce una vez.
+const DEFAULT_CONFIG={
+  openai_model:'gpt-4o-search-preview',
+  use_ai:true,
+  gh_owner:'cscoiraroldan',
+  gh_repo:'mobius-group-talleres-data',
+  gh_path:'talleres_mobius.csv',
+  gh_author:'Carlos Coira',
+  openai_api_key:'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',
+  gh_token:'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'
+};
+let APP_SETTINGS={...DEFAULT_CONFIG};
 const PAGE_SIZE=100; let currentPage=1, _filteredData=[];
 let clusterGroup=null, allGeoData=[], MAP_LIMIT=50;
 let map, markersLayer, markerMap={};
@@ -2930,7 +2944,25 @@ function closeEnrich(){document.getElementById('enrichOverlay').classList.remove
 // ══════════════════════════════════════════════════════
 
 function loadAppSettings(){
-  try{const s=localStorage.getItem(SETTINGS_KEY);if(s)APP_SETTINGS={...APP_SETTINGS,...JSON.parse(s)};}catch(e){}
+  // Siempre partir de DEFAULT_CONFIG, luego sobrescribir con localStorage
+  APP_SETTINGS={...DEFAULT_CONFIG};
+  try{
+    const s=localStorage.getItem(SETTINGS_KEY);
+    if(s){
+      const stored=JSON.parse(s);
+      // Mezclar: localStorage gana en credenciales personales,
+      // DEFAULT_CONFIG gana en valores de repo/modelo si localStorage los tiene vacíos
+      APP_SETTINGS={
+        ...APP_SETTINGS,     // defaults de base
+        ...stored,           // preferencias guardadas del usuario
+        // Los valores de repo/ruta siempre del DEFAULT si el stored los tiene vacíos
+        gh_owner: stored.gh_owner||DEFAULT_CONFIG.gh_owner,
+        gh_repo:  stored.gh_repo ||DEFAULT_CONFIG.gh_repo,
+        gh_path:  stored.gh_path ||DEFAULT_CONFIG.gh_path,
+        openai_model: stored.openai_model||DEFAULT_CONFIG.openai_model,
+      };
+    }
+  }catch(e){}
 }
 function saveAppSettings(){localStorage.setItem(SETTINGS_KEY,JSON.stringify(APP_SETTINGS));}
 function openSettings(){
